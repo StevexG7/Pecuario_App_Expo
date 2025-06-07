@@ -10,6 +10,7 @@ export const theme = {
         card_1: '#F0E8C9',
         card_2: '#FAF6E7',
         card_3: '#FAF8F1',
+        background: '#FAF6E7',
     },
 } as const;
 
@@ -29,6 +30,7 @@ export type ThemeColors = {
         card_1: string;
         card_2: string;
         card_3: string;
+        background: string;
     };
 };
 

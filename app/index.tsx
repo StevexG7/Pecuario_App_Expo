@@ -271,7 +271,7 @@ export default function Login() {
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={styles.switchModeButton}
+                        style={[styles.switchModeButton, { marginTop: rh(4) }]}
                         onPress={handleSwitchMode}
                     >
                         <Text style={styles.switchModeText}>
@@ -280,12 +280,17 @@ export default function Login() {
                     </TouchableOpacity>
 
                     {isLogin && (
-                        <TouchableOpacity style={styles.forgotPassword}>
+                        <TouchableOpacity style={[styles.forgotPassword, { marginTop: rh(3) }]}> 
                             <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                         </TouchableOpacity>
                     )}
                 </Animated.View>
             </KeyboardAvoidingView>
+            <View style={styles.copyrightContainer}>
+                <Text style={styles.copyrightText}>
+                    © {new Date().getFullYear()} Pecuario App. Todos los derechos reservados.
+                </Text>
+            </View>
         </View>
     );
 }
@@ -428,5 +433,17 @@ const styles = StyleSheet.create({
         color: theme.primary.text,
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    copyrightContainer: {
+        width: '100%',
+        alignItems: 'center',
+        marginTop: 'auto',
+        marginBottom: rh(2),
+    },
+    copyrightText: {
+        color: theme.primary.text,
+        fontSize: rf(1.5),
+        opacity: 0.6,
+        textAlign: 'center',
     },
 });

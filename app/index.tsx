@@ -1,29 +1,32 @@
-import { theme } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Animated, Easing, Image, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
+import { theme } from '../constants/Theme';
+import { authService } from './services/auth.service';
 
 // Componente de alerta centrada y modal
-function AppAlert({ message, onClose }: { message: string, onClose: () => void }) {
+const AppAlert = ({ message, onClose }: { message: string; onClose: () => void }) => {
+    if (!message) return null;
     return (
         <Modal
             transparent
-            animationType="fade"
             visible={!!message}
+            animationType="fade"
+            onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <View style={styles.modalAlert}>
-                    <Text style={styles.modalAlertText}>{message}</Text>
-                    <TouchableOpacity style={styles.modalButton} onPress={onClose}>
-                        <Text style={styles.modalButtonText}>Aceptar</Text>
+                <View style={styles.alertContainer}>
+                    <Text style={styles.alertText}>{message}</Text>
+                    <TouchableOpacity style={styles.alertButton} onPress={onClose}>
+                        <Text style={styles.alertButtonText}>OK</Text>
                     </TouchableOpacity>
                 </View>
             </View>
         </Modal>
     );
-}
+};
 
 export default function Login() {
     const textColor = theme.primary.text;
@@ -33,24 +36,24 @@ export default function Login() {
     const [alert, setAlert] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isLogin, setIsLogin] = useState(true);
     const router = useRouter();
+    
+    // Animaciones
     const eyeAnim = useRef(new Animated.Value(0)).current;
+    const formAnim = useRef(new Animated.Value(1)).current;
+    const usernameAnim = useRef(new Animated.Value(0)).current;
+    const switchModeAnim = useRef(new Animated.Value(0)).current;
 
     // Validación simple de email
     const validateEmail = (email: string) => {
         return /\S+@\S+\.\S+/.test(email);
     };
 
-    // Simulación de usuarios ya existentes
-    const usuariosExistentes = ['usuario1', 'admin', 'pecuario'];
-
-    const handleLogin = async () => {
-        if (!username) {
-            setAlert('Por favor ingresa tu nombre de usuario.');
-            return;
-        }
-        if (usuariosExistentes.includes(username.trim().toLowerCase())) {
-            setAlert('El nombre de usuario ya está en uso.');
+    const handleSubmit = async () => {
+        // Validaciones comunes
+        if (!email) {
+            setAlert('Por favor ingresa tu correo electrónico.');
             return;
         }
         if (!validateEmail(email)) {
@@ -61,21 +64,39 @@ export default function Login() {
             setAlert('Por favor ingresa tu contraseña.');
             return;
         }
-        if (password.length < 8) {
-            setAlert('La contraseña debe tener al menos 8 caracteres.');
+        if (password.length < 7) {
+            setAlert('La contraseña debe tener al menos 7 caracteres.');
             return;
         }
+
         setLoading(true);
         setAlert(null);
+
         try {
-            // Aquí va tu lógica de conexión con el backend
-            setTimeout(() => {
-                setLoading(false);
-                router.push('/transition');
-            }, 1200);
-        } catch (e) {
+            if (isLogin) {
+                // Lógica de inicio de sesión
+                const response = await authService.login({ email, password });
+                if (response.user) {
+                    router.push('/transition');
+                }
+            } else {
+                // Validaciones específicas para registro
+                if (!username) {
+                    setAlert('Por favor ingresa un nombre de usuario.');
+                    setLoading(false);
+                    return;
+                }
+                // Lógica de registro
+                const response = await authService.register({ username, email, password });
+                if (response.user) {
+                    setAlert('¡Registro exitoso! Iniciando sesión...');
+                    router.push('/transition');
+                }
+            }
+        } catch (error) {
+            setAlert(error instanceof Error ? error.message : 'Error de conexión. Intenta de nuevo.');
+        } finally {
             setLoading(false);
-            setAlert('Error de conexión. Intenta de nuevo.');
         }
     };
 
@@ -89,9 +110,65 @@ export default function Login() {
         setShowPassword((prev) => !prev);
     };
 
+    const handleSwitchMode = () => {
+        // Animar el formulario
+        Animated.sequence([
+            Animated.timing(formAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+                easing: Easing.out(Easing.ease),
+            }),
+            Animated.timing(formAnim, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+                easing: Easing.in(Easing.ease),
+            }),
+        ]).start();
+
+        // Animar el campo de username
+        Animated.timing(usernameAnim, {
+            toValue: isLogin ? 1 : 0,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+        }).start();
+
+        // Animar el botón de cambio de modo
+        Animated.timing(switchModeAnim, {
+            toValue: isLogin ? 1 : 0,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.inOut(Easing.ease),
+        }).start();
+
+        setIsLogin(!isLogin);
+    };
+
     const eyeRotation = eyeAnim.interpolate({
         inputRange: [0, 1],
         outputRange: ['0deg', '180deg'],
+    });
+
+    const usernameOpacity = usernameAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+    });
+
+    const usernameTranslateY = usernameAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-20, 0],
+    });
+
+    const switchModeOpacity = switchModeAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+    });
+
+    const formScale = formAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.95, 1],
     });
 
     return (
@@ -112,62 +189,102 @@ export default function Login() {
                     style={styles.typeImage}
                     resizeMode="contain"
                 />
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Nombre de usuario</Text>
-                    <TextInput
-                        style={[styles.input, { color: textColor }]}
-                        placeholder="Ingresa tu nombre de usuario"
-                        placeholderTextColor={textColor}
-                        autoCapitalize="none"
-                        value={username}
-                        onChangeText={setUsername}
-                    />
-                </View>
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Email</Text>
-                    <TextInput
-                        style={[styles.input, { color: textColor }]}
-                        placeholder="Ingresa tu correo"
-                        placeholderTextColor={textColor}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        value={email}
-                        onChangeText={setEmail}
-                    />
-                </View>
-                <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Contraseña</Text>
-                    <View style={styles.passwordInputWrapper}>
-                        <TextInput
-                            style={[styles.input, { color: textColor, paddingRight: 44 }]}
-                            placeholder="Ingresa tu contraseña"
-                            placeholderTextColor={textColor}
-                            secureTextEntry={!showPassword}
-                            value={password}
-                            onChangeText={setPassword}
-                        />
-                        <TouchableOpacity
-                            style={styles.eyeButton}
-                            onPress={handleTogglePassword}
-                            activeOpacity={0.7}
-                        >
-                            <Animated.View style={{ transform: [{ rotate: eyeRotation }] }}>
-                                <Ionicons
-                                    name={showPassword ? 'eye' : 'eye-off'}
-                                    size={24}
-                                    color={theme.primary.text}
+                
+                <Animated.View style={[
+                    styles.formContainer,
+                    {
+                        opacity: formAnim,
+                        transform: [{ scale: formScale }]
+                    }
+                ]}>
+                    <Animated.View style={[
+                        styles.inputContainer,
+                        {
+                            opacity: usernameOpacity,
+                            transform: [{ translateY: usernameTranslateY }]
+                        }
+                    ]}>
+                        {!isLogin && (
+                            <>
+                                <Text style={styles.label}>Nombre de usuario</Text>
+                                <TextInput
+                                    style={[styles.input, { color: textColor }]}
+                                    placeholder="Ingresa tu nombre de usuario"
+                                    placeholderTextColor={textColor}
+                                    autoCapitalize="none"
+                                    value={username}
+                                    onChangeText={setUsername}
                                 />
-                            </Animated.View>
-                        </TouchableOpacity>
+                            </>
+                        )}
+                    </Animated.View>
+
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Email</Text>
+                        <TextInput
+                            style={[styles.input, { color: textColor }]}
+                            placeholder="Ingresa tu correo"
+                            placeholderTextColor={textColor}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            value={email}
+                            onChangeText={setEmail}
+                        />
                     </View>
-                </View>
-                <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
-                    <Text style={styles.loginButtonText}>{loading ? 'Enviando...' : 'Enviar'}</Text>
-                    <Ionicons name="arrow-forward" size={24} color={theme.primary.contrastText} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.forgotPassword}>
-                    <Text style={[styles.forgotPasswordText]}>¿Olvidaste tu contraseña?</Text>
-                </TouchableOpacity>
+
+                    <View style={styles.inputContainer}>
+                        <Text style={styles.label}>Contraseña</Text>
+                        <View style={styles.passwordInputWrapper}>
+                            <TextInput
+                                style={[styles.input, { color: textColor, paddingRight: 44 }]}
+                                placeholder="Ingresa tu contraseña"
+                                placeholderTextColor={textColor}
+                                secureTextEntry={!showPassword}
+                                value={password}
+                                onChangeText={setPassword}
+                            />
+                            <TouchableOpacity
+                                style={styles.eyeButton}
+                                onPress={handleTogglePassword}
+                                activeOpacity={0.7}
+                            >
+                                <Animated.View style={{ transform: [{ rotate: eyeRotation }] }}>
+                                    <Ionicons
+                                        name={showPassword ? 'eye' : 'eye-off'}
+                                        size={24}
+                                        color={theme.primary.text}
+                                    />
+                                </Animated.View>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <TouchableOpacity 
+                        style={styles.loginButton}
+                        onPress={handleSubmit}
+                        disabled={loading}
+                    >
+                        <Text style={styles.loginButtonText}>
+                            {loading ? 'Procesando...' : isLogin ? 'Iniciar Sesión' : 'Registrarse'}
+                        </Text>
+                        <Ionicons name="arrow-forward" size={24} color={theme.primary.contrastText} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={styles.switchModeButton}
+                        onPress={handleSwitchMode}
+                    >
+                        <Text style={styles.switchModeText}>
+                            {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {isLogin && (
+                        <TouchableOpacity style={styles.forgotPassword}>
+                            <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
+                        </TouchableOpacity>
+                    )}
+                </Animated.View>
             </KeyboardAvoidingView>
         </View>
     );
@@ -188,6 +305,10 @@ const styles = StyleSheet.create({
         gap: rh(2),
         backgroundColor: theme.primary.main,
     },
+    formContainer: {
+        width: '100%',
+        alignItems: 'center',
+    },
     logo: {
         width: rw(20),
         maxWidth: rw(30),
@@ -207,6 +328,7 @@ const styles = StyleSheet.create({
         width: '100%',
         maxWidth: rw(90),
         marginBottom: rh(2),
+        overflow: 'hidden',
     },
     label: {
         color: theme.primary.text,
@@ -223,6 +345,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: rw(4),
         fontSize: rf(2),
         backgroundColor: theme.secondary.card_2,
+    },
+    passwordInputWrapper: {
+        position: 'relative',
+    },
+    eyeButton: {
+        position: 'absolute',
+        right: rw(4),
+        top: rh(1),
+        padding: rw(1),
     },
     loginButton: {
         width: '100%',
@@ -241,6 +372,14 @@ const styles = StyleSheet.create({
         fontSize: rf(2.2),
         fontWeight: 'bold',
     },
+    switchModeButton: {
+        marginTop: rh(2),
+    },
+    switchModeText: {
+        color: theme.primary.text,
+        fontSize: rf(1.8),
+        textDecorationLine: 'underline',
+    },
     forgotPassword: {
         marginTop: rh(2.5),
     },
@@ -250,58 +389,44 @@ const styles = StyleSheet.create({
         color: theme.primary.text,
         textAlign: 'center',
     },
-    // Estilos para el modal de alerta
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.25)',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    modalAlert: {
+    alertContainer: {
         backgroundColor: theme.primary.main,
         borderRadius: 16,
-        padding: 28,
+        padding: 20,
+        width: '80%',
+        maxWidth: 400,
         alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 260,
-        maxWidth: 340,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
         elevation: 4,
     },
-    modalAlertText: {
+    alertText: {
         color: theme.primary.text,
         fontSize: 16,
         textAlign: 'center',
         marginBottom: 18,
     },
-    modalButton: {
+    alertButton: {
         backgroundColor: theme.primary.button,
         borderRadius: 30,
-        paddingVertical: 10,
-        paddingHorizontal: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 24,
         marginTop: 4,
     },
-    modalButtonText: {
+    alertButtonText: {
         color: theme.primary.text,
         fontWeight: 'bold',
         fontSize: 16,
-    },
-    passwordInputWrapper: {
-        position: 'relative',
-        width: '100%',
-        justifyContent: 'center',
-    },
-    eyeButton: {
-        position: 'absolute',
-        right: 12,
-        top: '50%',
-        transform: [{ translateY: -12 }],
-        padding: 1,
-        zIndex: 2,
     },
 });

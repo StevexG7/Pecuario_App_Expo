@@ -58,10 +58,12 @@ class ApiClient {
                     }
                     return config;
                 } catch (error) {
+                    console.error('Request interceptor error:', error);
                     return Promise.reject(error);
                 }
             },
             (error) => {
+                console.error('Request interceptor error:', error);
                 return Promise.reject(error);
             }
         );
@@ -70,13 +72,19 @@ class ApiClient {
         this.axiosInstance.interceptors.response.use(
             (response: AxiosResponse) => response,
             async (error: AxiosError) => {
-                const originalRequest = error.config;
+                console.error('Response error:', error.response?.data || error.message);
                 
+                const originalRequest = error.config;
                 if (!originalRequest) {
-                    return Promise.reject(error);
+                    return Promise.reject(new ApiError(500, 'No request configuration available'));
                 }
 
-                if (error.response?.status === 401 && !this.isRefreshing) {
+                // Handle network errors
+                if (!error.response) {
+                    return Promise.reject(new ApiError(0, 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'));
+                }
+
+                if (error.response.status === 401 && !this.isRefreshing) {
                     this.isRefreshing = true;
 
                     try {
@@ -111,25 +119,44 @@ class ApiClient {
                         // Clear tokens and queue
                         await AsyncStorage.multiRemove(['auth_token', 'refresh_token']);
                         this.failedQueue = [];
-                        return Promise.reject(new ApiError(401, 'Session expired'));
+                        return Promise.reject(new ApiError(401, 'Sesión expirada. Por favor, inicia sesión nuevamente.'));
                     } finally {
                         this.isRefreshing = false;
                     }
                 }
 
                 // Queue the request if we're already refreshing
-                if (error.response?.status === 401 && this.isRefreshing) {
+                if (error.response.status === 401 && this.isRefreshing) {
                     return new Promise((resolve, reject) => {
                         this.failedQueue.push({ resolve, reject, config: originalRequest });
                     });
                 }
 
                 // Handle other errors
-                const status = error.response?.status || 500;
-                const message = (error.response?.data as ErrorResponse)?.message || 'An unexpected error occurred';
-                return Promise.reject(new ApiError(status, message, error.response?.data));
+                const status = error.response.status;
+                const errorData = error.response.data as ErrorResponse;
+                const message = errorData?.message || this.getDefaultErrorMessage(status);
+                
+                return Promise.reject(new ApiError(status, message, errorData));
             }
         );
+    }
+
+    private getDefaultErrorMessage(status: number): string {
+        switch (status) {
+            case 400:
+                return 'Solicitud inválida';
+            case 401:
+                return 'No autorizado';
+            case 403:
+                return 'Acceso denegado';
+            case 404:
+                return 'Recurso no encontrado';
+            case 500:
+                return 'Error interno del servidor';
+            default:
+                return 'Ha ocurrido un error inesperado';
+        }
     }
 
     public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
@@ -175,7 +202,7 @@ class ApiClient {
     private handleError(error: any): void {
         if (axios.isAxiosError(error)) {
             const status = error.response?.status || 500;
-            const message = error.response?.data?.message || 'An unexpected error occurred';
+            const message = error.response?.data?.message || this.getDefaultErrorMessage(status);
             throw new ApiError(status, message, error.response?.data);
         }
         throw error;

@@ -17,7 +17,6 @@ const AnimatedDotsLine = ({
     lineColor = '#23263B',
     style = {},
 }) => {
-    const lineWidth = useRef(new Animated.Value(0)).current;
     const dotAnims = useRef(Array.from({ length: dotCount }, () => new Animated.Value(0))).current;
     const lineRef = useRef(null);
 

@@ -57,6 +57,8 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     backgroundColor: '#F3ECC7',
+    transform: [{ scale: 1.15 }],
+    paddingVertical: 10,
   },
   label: {
     fontSize: 14,

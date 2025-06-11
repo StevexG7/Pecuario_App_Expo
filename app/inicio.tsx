@@ -1,6 +1,6 @@
 import { theme } from '@/constants/Theme';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StatusBar as RNStatusBar, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
@@ -10,6 +10,7 @@ import { useAuth } from '../src/hooks/useAuth';
 
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? RNStatusBar.currentHeight || 24 : 44;
 const HEADER_HEIGHT = STATUSBAR_HEIGHT + rh(7);
+
 
 // Componente animado para los puntos sobre la línea
 const AnimatedDotsLine = ({
@@ -98,6 +99,7 @@ const AnimatedDotsLine = ({
 export default function Inicio() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('Inicio');
+    const router = useRouter();
     const dailyCards = [
         {
             icon: <Ionicons name="checkmark" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
@@ -137,6 +139,15 @@ export default function Inicio() {
         },
         // Puedes agregar más cards aquí
     ];
+    const handleTabPress = (tab: string) => {
+        setActiveTab(tab);
+        if (tab === 'Ganado') {
+            router.push('/ganado');
+        } else if (tab === 'Inicio') {
+            router.push('/inicio');
+        }
+        // Puedes agregar más rutas según tus tabs
+    };
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <Stack.Screen options={{ headerShown: false }} />
@@ -144,31 +155,29 @@ export default function Inicio() {
                 <Text style={styles.welcomeSmall}>Bienvenido(a)</Text>
                 <Text style={styles.welcomeName}>{user?.name || user?.nombre || ''}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-                <View style={{ marginTop: 1 }}>
-                    <View style={styles.dailyContainer}>
-                        <Text style={styles.sectionTitle}>Actividades diarias</Text>
-                        <View style={styles.dailyScrollWrapper}>
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.dailyScroll}
-                            >
-                                {dailyCards.map((card, idx) => (
-                                    <TouchableOpacity
-                                        key={card.label + idx}
-                                        style={[styles.dailyCard, idx !== dailyCards.length - 1 && { marginRight: rw(3) }]}
-                                        activeOpacity={0.85}
-                                    >
-                                        {card.icon}
-                                        <Text style={styles.dailyLabel}>{card.label}</Text>
-                                        <Text style={styles.dailyValue}>
-                                            <Text style={styles.bold}>{card.bold}</Text>/{card.value.split('/')[1]}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
+            <View style={{ flex: 1, marginTop: 1 }}>
+                <View style={styles.dailyContainer}>
+                    <Text style={styles.sectionTitle}>Actividades diarias</Text>
+                    <View style={styles.dailyScrollWrapper}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.dailyScroll}
+                        >
+                            {dailyCards.map((card, idx) => (
+                                <TouchableOpacity
+                                    key={card.label + idx}
+                                    style={[styles.dailyCard, idx !== dailyCards.length - 1 && { marginRight: rw(3) }]}
+                                    activeOpacity={0.85}
+                                >
+                                    {card.icon}
+                                    <Text style={styles.dailyLabel}>{card.label}</Text>
+                                    <Text style={styles.dailyValue}>
+                                        <Text style={styles.bold}>{card.bold}</Text>/{card.value.split('/')[1]}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
                     </View>
                 </View>
                 <Text style={styles.sectionTitle2}>Tus estadísticas</Text>
@@ -205,13 +214,7 @@ export default function Inicio() {
                     </View>
                 </View>
             </View>
-            <CustomTabBar
-                activeTab={activeTab}
-                onTabPress={(tab: string) => {
-                    setActiveTab(tab);
-                    // Aquí puedes agregar navegación según el tab
-                }}
-            />
+            <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
         </SafeAreaView>
     );
 }

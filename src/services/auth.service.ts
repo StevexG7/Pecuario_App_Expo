@@ -8,20 +8,22 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData extends LoginCredentials {
-    username: string;
+    nombre: string;
     email: string;
     password: string;
-    // Add any other registration fields needed
+}
+
+export interface AuthUser {
+    id: string;
+    name?: string;
+    nombre?: string;
+    email: string;
 }
 
 export interface AuthResponse {
     token: string;
     refreshToken: string;
-    user: {
-        id: string;
-        name: string;
-        email: string;
-    };
+    user: AuthUser;
 }
 
 class AuthService {
@@ -31,7 +33,6 @@ class AuthService {
             credentials
         );
 
-        // Adaptar la respuesta para aceptar 'usuario' y 'nombre'
         const user = response.user || (response.usuario && {
             id: response.usuario.id,
             name: response.usuario.nombre,
@@ -48,17 +49,23 @@ class AuthService {
 
     async register(data: RegisterData): Promise<AuthResponse> {
         try {
-            const response = await apiClient.post<AuthResponse>(
+            const response: any = await apiClient.post(
                 API_CONFIG.ENDPOINTS.AUTH.REGISTER,
                 data
             );
             
-            if (!response.token || !response.refreshToken || !response.user) {
+            const user = response.user || (response.usuario && {
+                id: response.usuario.id,
+                name: response.usuario.nombre,
+                email: response.usuario.email
+            });
+
+            if (!response.token || !response.refreshToken || !user) {
                 throw new ApiError(400, 'Respuesta de registro inválida');
             }
 
             await this.setTokens(response.token, response.refreshToken);
-            return response;
+            return { token: response.token, refreshToken: response.refreshToken, user };
         } catch (error) {
             if (error instanceof ApiError) {
                 throw error;

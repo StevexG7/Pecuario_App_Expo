@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { Animated, Easing, Image, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
 import { theme } from '../constants/Theme';
-import { authService } from './services/auth.service';
+import { authService } from '../src/services/auth.service';
 
 // Componente de alerta centrada y modal
 const AppAlert = ({ message, onClose }: { message: string; onClose: () => void }) => {
@@ -87,7 +87,7 @@ export default function Login() {
                     return;
                 }
                 // Lógica de registro
-                const response = await authService.register({ username, email, password });
+                const response = await authService.register({ nombre: username, email, password });
                 if (response.user) {
                     setAlert('¡Registro exitoso! Iniciando sesión...');
                     router.push('/transition');
@@ -159,11 +159,6 @@ export default function Login() {
     const usernameTranslateY = usernameAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [-20, 0],
-    });
-
-    const switchModeOpacity = switchModeAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
     });
 
     const formScale = formAnim.interpolate({

@@ -1,7 +1,7 @@
 import { theme } from '@/constants/Theme';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View, StatusBar } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import CustomTabBar from '../components/CustomTabBar';
 
 export default function Ganado() {
@@ -10,13 +10,22 @@ export default function Ganado() {
   
 
   const handleTabPress = (tab: string) => {
+    if (tab === activeTab) return; // Si ya estamos en esa pestaña, no hacer nada
     setActiveTab(tab);
-    if (tab === 'Inicio') {
-      router.push('/inicio');
-    } else if (tab === 'Ganado') {
-      router.push('/ganado');
+    switch (tab) {
+      case 'Ganado':
+        router.navigate('/ganado');
+        break;
+      case 'Inicio':
+        router.navigate('/inicio');
+        break;
+      case 'Formulario':
+        router.navigate('/formulario');
+        break;
+      case 'Perfil':
+        // Aquí puedes agregar la navegación al perfil cuando lo implementes
+        break;
     }
-    // Puedes agregar más rutas según tus tabs
   };
 
   return (

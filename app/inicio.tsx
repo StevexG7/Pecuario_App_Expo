@@ -115,7 +115,7 @@ export default function Inicio() {
         },
         {
             icon: <Ionicons name="list" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
-            label: 'Inventario',
+            label: 'Formulario',
             value: '5/30',
             bold: '5',
         },
@@ -133,20 +133,29 @@ export default function Inicio() {
         },
         {
             icon: <Ionicons name="list" size={32} color={theme.primary.text} style={{ marginBottom: 12 }} />,
-            label: 'Inventario',
+            label: 'Formulario',
             value: '5/30',
             bold: '5',
         },
         // Puedes agregar más cards aquí
     ];
     const handleTabPress = (tab: string) => {
+        if (tab === activeTab) return; // Si ya estamos en esa pestaña, no hacer nada
         setActiveTab(tab);
-        if (tab === 'Ganado') {
-            router.push('/ganado');
-        } else if (tab === 'Inicio') {
-            router.push('/inicio');
+        switch (tab) {
+            case 'Ganado':
+                router.navigate('/ganado');
+                break;
+            case 'Inicio':
+                router.navigate('/inicio');
+                break;
+            case 'Formulario':
+                router.navigate('/formulario');
+                break;
+            case 'Perfil':
+                // Aquí puedes agregar la navegación al perfil cuando lo implementes
+                break;
         }
-        // Puedes agregar más rutas según tus tabs
     };
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

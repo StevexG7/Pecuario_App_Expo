@@ -42,12 +42,38 @@ export default function RootLayout() {
           headerTitleStyle: {
             fontWeight: 'bold',
           },
+          animation: 'none',
+          gestureEnabled: false,
         }}
       >
         <Stack.Screen
           name="index"
           options={{
             title: 'Login',
+          }}
+        />
+        <Stack.Screen
+          name="inicio"
+          options={{
+            headerShown: false,
+            animation: 'none',
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="ganado"
+          options={{
+            headerShown: false,
+            animation: 'none',
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="formulario"
+          options={{
+            headerShown: false,
+            animation: 'none',
+            gestureEnabled: false,
           }}
         />
       </Stack>

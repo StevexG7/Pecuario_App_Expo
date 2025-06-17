@@ -5,7 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 const tabs = [
   { label: 'Inicio', icon: <Ionicons name="bookmark-outline" size={28} />, key: 'Inicio' },
   { label: 'Ganado', icon: <MaterialCommunityIcons name="cow" size={28} />, key: 'Ganado' },
-  { label: 'Inventario', icon: <Ionicons name="list-outline" size={28} />, key: 'Inventario' },
+  { label: 'Formulario', icon: <Ionicons name="list-outline" size={28} />, key: 'Formulario' },
   { label: 'Perfil', icon: <Ionicons name="person-outline" size={28} />, key: 'Perfil' },
 ];
 

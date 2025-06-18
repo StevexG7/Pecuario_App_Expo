@@ -93,7 +93,7 @@ export default function RecoverPass() {
         }
     };
 
-    // Paso 2b: Reenviar código
+    // Reenviar código
     const handleResendCode = async () => {
         setLoading(true);
         setAlert(null);
@@ -116,7 +116,6 @@ export default function RecoverPass() {
         }
     };
 
-    // Paso 3: Cambiar contraseña
     const handleChangePassword = async () => {
         if (!password || !confirm) {
             setAlert('Por favor ingresa y confirma la nueva contraseña.');

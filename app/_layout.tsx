@@ -76,6 +76,14 @@ export default function RootLayout() {
             gestureEnabled: false,
           }}
         />
+        <Stack.Screen
+          name="resetpassword"
+          options={{
+            headerShown: false,
+            animation: 'none',
+            gestureEnabled: false,
+          }}
+        />
       </Stack>
     </SafeAreaProvider>
   );

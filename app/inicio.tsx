@@ -2,14 +2,15 @@ import { theme } from '@/constants/Theme';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StatusBar as RNStatusBar, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Image, Platform, StatusBar as RNStatusBar, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import CustomTabBar from '../components/CustomTabBar';
 import { useAuth } from '../src/hooks/useAuth';
 
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? RNStatusBar.currentHeight || 24 : 44;
-const HEADER_HEIGHT = STATUSBAR_HEIGHT + rh(7);
+const HEADER_HEIGHT = rh(12);
 
 
 // Componente animado para los puntos sobre la línea
@@ -144,13 +145,13 @@ export default function Inicio() {
         setActiveTab(tab);
         switch (tab) {
             case 'Ganado':
-                router.navigate('/ganado');
+                router.replace('/ganado');
                 break;
             case 'Inicio':
-                router.navigate('/inicio');
+                router.replace('/inicio');
                 break;
             case 'Formulario':
-                router.navigate('/formulario');
+                router.replace('/formulario');
                 break;
             case 'Perfil':
                 // Aquí puedes agregar la navegación al perfil cuando lo implementes
@@ -161,68 +162,73 @@ export default function Inicio() {
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <Stack.Screen options={{ headerShown: false }} />
             <View style={styles.welcomeHeader}>
-                <Text style={styles.welcomeSmall}>Bienvenido(a)</Text>
-                <Text style={styles.welcomeName}>{user?.name || user?.nombre || ''}</Text>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.welcomeSmall}>Bienvenido(a)</Text>
+                    <Text style={styles.welcomeName}>{user?.name || user?.nombre || ''}</Text>
+                </View>
+                <Image source={require('../assets/images/Logo.png')} style={styles.logo} resizeMode="contain" />
             </View>
-            <View style={{ flex: 1, marginTop: 1 }}>
-                <View style={styles.dailyContainer}>
-                    <Text style={styles.sectionTitle}>Actividades diarias</Text>
-                    <View style={styles.dailyScrollWrapper}>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.dailyScroll}
-                        >
-                            {dailyCards.map((card, idx) => (
-                                <TouchableOpacity
-                                    key={card.label + idx}
-                                    style={[styles.dailyCard, idx !== dailyCards.length - 1 && { marginRight: rw(3) }]}
-                                    activeOpacity={0.85}
-                                >
-                                    {card.icon}
-                                    <Text style={styles.dailyLabel}>{card.label}</Text>
-                                    <Text style={styles.dailyValue}>
-                                        <Text style={styles.bold}>{card.bold}</Text>/{card.value.split('/')[1]}
-                                    </Text>
+            <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingTop: HEADER_HEIGHT }}>
+                <View style={{ flex: 1, marginTop: 1 }}>
+                    <View style={styles.dailyContainer}>
+                        <Text style={styles.sectionTitle}>Actividades diarias</Text>
+                        <View style={styles.dailyScrollWrapper}>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.dailyScroll}
+                            >
+                                {dailyCards.map((card, idx) => (
+                                    <TouchableOpacity
+                                        key={card.label + idx}
+                                        style={[styles.dailyCard, idx !== dailyCards.length - 1 && { marginRight: rw(3) }]}
+                                        activeOpacity={0.85}
+                                    >
+                                        {card.icon}
+                                        <Text style={styles.dailyLabel}>{card.label}</Text>
+                                        <Text style={styles.dailyValue}>
+                                            <Text style={styles.bold}>{card.bold}</Text>/{card.value.split('/')[1]}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </View>
+                    <Text style={styles.sectionTitle2}>Tus estadísticas</Text>
+                    <View style={styles.statsCol}>
+                        <View style={styles.statsCard}>
+                            <View style={styles.statsCardRow}>
+                                <MaterialCommunityIcons name="cow" size={32} color={theme.primary.text} style={styles.statsIcon} />
+                                <Text style={styles.statsTitle}>Estado del ganado</Text>
+                                <TouchableOpacity style={styles.statsArrow}>
+                                    <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
                                 </TouchableOpacity>
-                            ))}
-                        </ScrollView>
+                            </View>
+                            <AnimatedDotsLine />
+                        </View>
+                        <View style={styles.statsCard}>
+                            <View style={styles.statsCardRow}>
+                                <MaterialCommunityIcons name="shovel" size={32} color={theme.primary.text} style={styles.statsIcon} />
+                                <Text style={styles.statsTitle}>Próximos a vencer</Text>
+                                <TouchableOpacity style={styles.statsArrow}>
+                                    <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
+                                </TouchableOpacity>
+                            </View>
+                            <AnimatedDotsLine />
+                        </View>
+                        <View style={styles.statsCard}>
+                            <View style={styles.statsCardRow}>
+                                <MaterialCommunityIcons name="power-plug" size={32} color={theme.primary.text} style={styles.statsIcon} />
+                                <Text style={styles.statsTitle}>Ahorro de energía</Text>
+                                <TouchableOpacity style={styles.statsArrow}>
+                                    <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
+                                </TouchableOpacity>
+                            </View>
+                            <AnimatedDotsLine />
+                        </View>
                     </View>
                 </View>
-                <Text style={styles.sectionTitle2}>Tus estadísticas</Text>
-                <View style={styles.statsCol}>
-                    <View style={styles.statsCard}>
-                        <View style={styles.statsCardRow}>
-                            <MaterialCommunityIcons name="cow" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                            <Text style={styles.statsTitle}>Estado del ganado</Text>
-                            <TouchableOpacity style={styles.statsArrow}>
-                                <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
-                            </TouchableOpacity>
-                        </View>
-                        <AnimatedDotsLine />
-                    </View>
-                    <View style={styles.statsCard}>
-                        <View style={styles.statsCardRow}>
-                            <MaterialCommunityIcons name="shovel" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                            <Text style={styles.statsTitle}>Próximos a vencer</Text>
-                            <TouchableOpacity style={styles.statsArrow}>
-                                <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
-                            </TouchableOpacity>
-                        </View>
-                        <AnimatedDotsLine />
-                    </View>
-                    <View style={styles.statsCard}>
-                        <View style={styles.statsCardRow}>
-                            <MaterialCommunityIcons name="power-plug" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                            <Text style={styles.statsTitle}>Ahorro de energía</Text>
-                            <TouchableOpacity style={styles.statsArrow}>
-                                <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
-                            </TouchableOpacity>
-                        </View>
-                        <AnimatedDotsLine />
-                    </View>
-                </View>
-            </View>
+            </ScrollView>
             <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
         </SafeAreaView>
     );
@@ -237,19 +243,19 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
     },
     welcomeHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: rw(4),
+        paddingTop: rh(2),
+        paddingBottom: rh(2),
+        backgroundColor: theme.primary.main,
+        height: HEADER_HEIGHT,
         position: 'absolute',
-        top: rw(7),
+        top: 0,
         left: 0,
         right: 0,
         zIndex: 10,
-        height: HEADER_HEIGHT,
-        backgroundColor: theme.primary.main,
-        paddingTop: STATUSBAR_HEIGHT,
-        paddingBottom: rh(2.5),
-        paddingHorizontal: rw(2.5),
-        borderBottomLeftRadius: rw(8),
-        borderBottomRightRadius: rw(8),
-        justifyContent: 'flex-end',
     },
     welcomeSmall: {
         color: theme.primary.text,
@@ -263,7 +269,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     dailyContainer: {
-        marginTop: rh(3),
+        marginTop: rh(-10),
         marginBottom: rh(1.5),
         maxHeight: rh(16),
     },
@@ -368,5 +374,13 @@ const styles = StyleSheet.create({
         backgroundColor: '#23263B',
         borderRadius: 2,
         marginHorizontal: 2,
+    },
+    logo: {
+        width: 56,
+        height: 56,
+        alignSelf: 'flex-end',
+    },
+    scrollView: {
+        flex: 1,
     },
 });

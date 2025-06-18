@@ -14,13 +14,13 @@ export default function Ganado() {
     setActiveTab(tab);
     switch (tab) {
       case 'Ganado':
-        router.navigate('/ganado');
+        router.replace('/ganado');
         break;
       case 'Inicio':
-        router.navigate('/inicio');
+        router.replace('/inicio');
         break;
       case 'Formulario':
-        router.navigate('/formulario');
+        router.replace('/formulario' as any);
         break;
       case 'Perfil':
         // Aquí puedes agregar la navegación al perfil cuando lo implementes

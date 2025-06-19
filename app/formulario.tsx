@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomInput from '../components/CustomInput';
 import CustomTabBar from '../components/CustomTabBar';
 
-type Gender = 'vaca' | 'toro';
+type Gender = 'hembra' | 'macho';
 type Purpose = 'lechera' | 'cria' | 'levante' | 'seba';
 type Breed = 'nelore' | 'criollo' | 'gyr' | 'brahman';
 
@@ -44,7 +44,6 @@ export default function Formulario() {
     };
 
     const handleLotChange = (text: string) => {
-        // Solo permitir números y máximo 3 dígitos
         if (/^\d{0,3}$/.test(text)) {
             setLot(text);
             setErrors(prev => ({ ...prev, lot: false }));
@@ -92,7 +91,7 @@ export default function Formulario() {
                             setPurpose(null); // Reset purpose when gender changes
                             setErrors(prev => ({ ...prev, gender: false }));
                         }}
-                        options={['vaca', 'toro']}
+                        options={['hembra', 'macho']}
                         placeholder="Selecciona un género"
                     />
                     {errors.gender && (
@@ -100,18 +99,16 @@ export default function Formulario() {
                     )}
 
                     {/* Propósito */}
-                    {gender && (
-                        <CustomInput
-                            label="Propósito *"
-                            value={purpose || ''}
-                            onChange={(val) => {
-                                setPurpose(val as Purpose);
-                                setErrors(prev => ({ ...prev, purpose: false }));
-                            }}
-                            options={gender === 'vaca' ? ['lechera', 'cria', 'levante'] : ['seba', 'levante']}
-                            placeholder="Selecciona un propósito"
-                        />
-                    )}
+                    <CustomInput
+                        label="Propósito *"
+                        value={purpose || ''}
+                        onChange={(val) => {
+                            setPurpose(val as Purpose);
+                            setErrors(prev => ({ ...prev, purpose: false }));
+                        }}
+                        options={gender === 'hembra' ? ['lechera', 'cria', 'levante'] : gender === 'macho' ? ['seba', 'levante'] : ['lechera', 'cria', 'levante', 'seba']}
+                        placeholder="Selecciona un propósito"
+                    />
                     {errors.purpose && (
                         <Text style={styles.errorText}>Selecciona un propósito</Text>
                     )}
@@ -148,6 +145,15 @@ export default function Formulario() {
                     >
                         <Text style={styles.submitButtonText}>Registrar</Text>
                     </TouchableOpacity>
+
+                    {/* Botón para dirigirse a la vista del ganado */}
+                    <TouchableOpacity 
+                        style={styles.submitButton}
+                        onPress={() => router.replace('/ganado')}
+                    >
+                        <Text style={styles.submitButtonText}>Ir a Ganado</Text>
+                    </TouchableOpacity>
+
                 </View>
             </ScrollView>
             <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} />

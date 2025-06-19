@@ -154,7 +154,7 @@ export default function Inicio() {
                 router.replace('/formulario');
                 break;
             case 'Perfil':
-                // Aquí puedes agregar la navegación al perfil cuando lo implementes
+                router.replace('/perfil');
                 break;
         }
     };
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: rw(4),
-        paddingTop: rh(2),
+        paddingTop: rh(3.5),
         paddingBottom: rh(2),
         backgroundColor: theme.primary.main,
         height: HEADER_HEIGHT,

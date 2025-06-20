@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { Animated, Easing, Image, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
 import { theme } from '../constants/Theme';
-import { authService } from '../src/services/auth.service';
+import { useAuthContext } from '../src/context/AuthContext';
 
 // Componente de alerta centrada y modal
 const AppAlert = ({ message, onClose }: { message: string; onClose: () => void }) => {
@@ -34,7 +34,7 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [alert, setAlert] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+    const { login, register, loading, error } = useAuthContext();
     const [showPassword, setShowPassword] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
     const router = useRouter();
@@ -69,34 +69,26 @@ export default function Login() {
             return;
         }
 
-        setLoading(true);
         setAlert(null);
 
         try {
             if (isLogin) {
                 // Lógica de inicio de sesión
-                const response = await authService.login({ email, password });
-                if (response.user) {
-                    router.push('/transition');
-                }
+                await login(email, password);
+                router.replace('/transition');
             } else {
                 // Validaciones específicas para registro
                 if (!username) {
                     setAlert('Por favor ingresa un nombre de usuario.');
-                    setLoading(false);
                     return;
                 }
                 // Lógica de registro
-                const response = await authService.register({ nombre: username, email, password });
-                if (response.user) {
-                    setAlert('¡Registro exitoso! Iniciando sesión...');
-                    router.push('/transition');
-                }
+                await register(username, email, password);
+                setAlert('¡Registro exitoso! Iniciando sesión...');
+                router.replace('/transition');
             }
-        } catch (error) {
-            setAlert(error instanceof Error ? error.message : 'Error de conexión. Intenta de nuevo.');
-        } finally {
-            setLoading(false);
+        } catch (err) {
+            setAlert(err instanceof Error ? err.message : 'Error de conexión. Intenta de nuevo.');
         }
     };
 

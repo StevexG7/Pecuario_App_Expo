@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-    BASE_URL: 'https://bc87-191-109-191-6.ngrok-free.app/api',
+    BASE_URL: 'https://e737-179-1-226-179.ngrok-free.app/api',
     TIMEOUT: 30000, // estos son 30 segundos de espera para la api
     ENDPOINTS: {
         AUTH: {

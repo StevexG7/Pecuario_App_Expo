@@ -4,7 +4,7 @@ import { Animated, Easing, Image, StyleSheet, Text, TextInput, TouchableOpacity,
 import SixDigitInput from '../components/SixDigitInput';
 import { theme } from '../constants/Theme';
 
-const API_URL = 'https://bc87-191-109-191-6.ngrok-free.app/api';
+const API_URL = 'https://e737-179-1-226-179.ngrok-free.app/api';
 
 export default function RecoverPass() {
     const [step, setStep] = useState<'email' | 'code' | 'password'>('email');

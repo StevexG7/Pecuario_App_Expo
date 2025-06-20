@@ -43,7 +43,8 @@ export default function Ganado() {
         router.replace('/formulario' as any);
         break;
       case 'Perfil':
-        // Aquí puedes agregar la navegación al perfil cuando lo implementes
+        router.replace('/perfil');
+        break;
         break;
     }
   };

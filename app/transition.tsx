@@ -1,7 +1,8 @@
 import { theme } from '@/constants/Theme';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import { getMisFichas } from '../src/services/lote.service';
 
 const WAVE_TEXT = '¡Bienvenido a Pecuario App!';
 
@@ -9,6 +10,30 @@ export default function Transition() {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const router = useRouter();
     const waveAnims = useRef(WAVE_TEXT.split('').map(() => new Animated.Value(0))).current;
+    const [isCheckingLotes, setIsCheckingLotes] = useState(true);
+
+    const checkUserLotes = async () => {
+        try {
+            const data: any = await getMisFichas();
+            const fichas = data.fichas || data;
+            return fichas.length > 0;
+        } catch (error) {
+            console.error('Error verificando lotes:', error);
+            return false; // En caso de error, asumimos que no hay lotes
+        }
+    };
+
+    const navigateToAppropriateScreen = async () => {
+        const hasLotes = await checkUserLotes();
+        
+        if (hasLotes) {
+            // Usuario tiene lotes, ir a inicio
+            router.replace('/inicio');
+        } else {
+            // Usuario no tiene lotes, ir al formulario
+            router.replace('/formulario');
+        }
+    };
 
     useEffect(() => {
         // Fade in general
@@ -47,7 +72,7 @@ export default function Transition() {
                 duration: 500,
                 useNativeDriver: true,
             }).start(() => {
-                router.replace('/inicio');
+                navigateToAppropriateScreen();
             });
         }, waveDuration + 400); // un poco después de la ola
         return () => clearTimeout(timeout);
@@ -70,7 +95,9 @@ export default function Transition() {
                         </Animated.Text>
                     ))}
                 </View>
-                <Text style={styles.subtitle}>Has iniciado sesión correctamente.</Text>
+                <Text style={styles.subtitle}>
+                    {isCheckingLotes ? 'Verificando tu información...' : 'Has iniciado sesión correctamente.'}
+                </Text>
             </Animated.View>
         </View>
     );

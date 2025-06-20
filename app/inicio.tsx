@@ -110,7 +110,7 @@ export default function Inicio() {
         },
         {
             icon: <MaterialIcons name="monitor" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
-            label: 'Revisiones',
+            label: 'Alertas',
             value: '10/30',
             bold: '10',
         },
@@ -121,23 +121,11 @@ export default function Inicio() {
             bold: '5',
         },
         {
-            icon: <Ionicons name="checkmark" size={32} color={theme.primary.text} style={{ marginBottom: 12 }} />,
-            label: 'Cumplidas',
-            value: '20/30',
-            bold: '20',
-        },
-        {
-            icon: <MaterialIcons name="monitor" size={32} color={theme.primary.text} style={{ marginBottom: 12 }} />,
-            label: 'Revisiones',
-            value: '10/30',
-            bold: '10',
-        },
-        {
-            icon: <Ionicons name="list" size={32} color={theme.primary.text} style={{ marginBottom: 12 }} />,
-            label: 'Formulario',
+            icon: <Ionicons name="list" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
+            label: 'Calculo',
             value: '5/30',
             bold: '5',
-        },
+        }
         // Puedes agregar más cards aquí
     ];
     const handleTabPress = (tab: string) => {
@@ -209,7 +197,7 @@ export default function Inicio() {
                         <View style={styles.statsCard}>
                             <View style={styles.statsCardRow}>
                                 <MaterialCommunityIcons name="shovel" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                                <Text style={styles.statsTitle}>Próximos a vencer</Text>
+                                <Text style={styles.statsTitle}>Dietas a vencer</Text>
                                 <TouchableOpacity style={styles.statsArrow}>
                                     <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
                                 </TouchableOpacity>
@@ -219,7 +207,7 @@ export default function Inicio() {
                         <View style={styles.statsCard}>
                             <View style={styles.statsCardRow}>
                                 <MaterialCommunityIcons name="power-plug" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                                <Text style={styles.statsTitle}>Ahorro de energía</Text>
+                                <Text style={styles.statsTitle}>Ahorro de alimentos</Text>
                                 <TouchableOpacity style={styles.statsArrow}>
                                     <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
                                 </TouchableOpacity>
@@ -243,6 +231,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
     },
     welcomeHeader: {
+        borderRadius: rw(4),
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -269,7 +258,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     dailyContainer: {
-        marginTop: rh(-10),
+        marginTop: rh(-12),
         marginBottom: rh(1.5),
         maxHeight: rh(16),
     },

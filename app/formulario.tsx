@@ -1,15 +1,38 @@
 import { theme } from '@/constants/Theme';
 import { Stack, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomInput from '../components/CustomInput';
 import CustomTabBar from '../components/CustomTabBar';
+import { registrarAnimal } from '../src/services/animal.service';
 
 type Gender = 'hembra' | 'macho';
 type Purpose = 'lechera' | 'cria' | 'levante' | 'seba';
 type Breed = 'nelore' | 'criollo' | 'gyr' | 'brahman';
+
+// Componente de alerta centrada y modal (igual que en index.tsx)
+const AppAlert = ({ message, onClose }: { message: string; onClose: () => void }) => {
+    if (!message) return null;
+    return (
+        <Modal
+            transparent
+            visible={!!message}
+            animationType="fade"
+            onRequestClose={onClose}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.alertContainer}>
+                    <Text style={styles.alertText}>{message}</Text>
+                    <TouchableOpacity style={styles.alertButton} onPress={onClose}>
+                        <Text style={styles.alertButtonText}>OK</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+    );
+};
 
 export default function Formulario() {
     const [activeTab, setActiveTab] = useState('Formulario');
@@ -24,6 +47,7 @@ export default function Formulario() {
         breed: false,
         lot: false
     });
+    const [alert, setAlert] = useState<string | null>(null);
 
     const handleTabPress = (tab: string) => {
         if (tab === activeTab) return;
@@ -44,25 +68,58 @@ export default function Formulario() {
     };
 
     const handleLotChange = (text: string) => {
-        if (/^\d{0,3}$/.test(text)) {
+        if (/^\d{0,3}$/.test(text) && (!text || parseInt(text) > 0)) {
             setLot(text);
             setErrors(prev => ({ ...prev, lot: false }));
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const newErrors = {
             gender: !gender,
             purpose: !purpose,
             breed: !breed,
-            lot: !lot || lot.length < 1
+            lot: !lot || lot.length < 1 || parseInt(lot) < 1
         };
 
         setErrors(newErrors);
 
         if (!Object.values(newErrors).some(error => error)) {
-            // Aquí puedes manejar el envío del formulario
-            console.log({ gender, purpose, breed, lot });
+            try {
+                const animalData = {
+                    genero: gender === 'hembra' ? 'Hembra' : 'Macho',
+                    proposito: purpose!,
+                    raza: breed!,
+                    cantidad: parseInt(lot)
+                };
+                
+                console.log('Enviando datos al backend:', animalData);
+                
+                await registrarAnimal(animalData);
+
+                setAlert('Animales registrados exitosamente');
+                setTimeout(() => {
+                    router.replace('/inicio');
+                }, 1500);
+            } catch (err: any) {
+                console.error('Error completo:', err);
+                console.error('Datos del error:', {
+                    mensaje: err.message,
+                    status: err.status,
+                    data: err.data
+                });
+                
+                let errorMessage = 'Error al registrar los animales.';
+                if (err.status === 400) {
+                    errorMessage = 'Los datos enviados no son válidos. Verifica la información.';
+                } else if (err.status === 401) {
+                    errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+                } else if (err.status === 500) {
+                    errorMessage = 'Error en el servidor. Por favor, intenta más tarde.';
+                }
+                
+                setAlert(errorMessage);
+            }
         }
     };
 
@@ -78,6 +135,7 @@ export default function Formulario() {
                     headerTintColor: theme.primary.text,
                 }} 
             />
+            <AppAlert message={alert ?? ''} onClose={() => setAlert(null)} />
             <ScrollView style={styles.scrollView}>
                 <View style={styles.content}>
                     <Text style={styles.title}>Registro de Ganado</Text>
@@ -130,13 +188,13 @@ export default function Formulario() {
 
                     {/* Lote */}
                     <CustomInput
-                        label="Lote *"
+                        label="Cantidad de Animales *"
                         value={lot}
                         onChange={handleLotChange}
-                        placeholder="Ingresa el número de lote (1-3 dígitos)"
+                        placeholder="Ingresa la cantidad (1-999)"
                     />
                     {errors.lot && (
-                        <Text style={styles.errorText}>Ingresa un número de lote válido</Text>
+                        <Text style={styles.errorText}>Ingresa una cantidad válida (1-999)</Text>
                     )}
 
                     <TouchableOpacity 
@@ -228,18 +286,59 @@ const styles = StyleSheet.create({
     errorText: {
         color: '#ff4444',
         fontSize: rf(1.4),
-        marginTop: rh(0.5),
+        marginTop: rh(-2),
+        marginBottom: rh(3),
     },
     submitButton: {
         backgroundColor: theme.primary.button,
         padding: rw(3),
         borderRadius: rw(2),
         alignItems: 'center',
-        marginTop: rh(2),
+        marginTop: rh(3),
     },
     submitButtonText: {
         color: theme.primary.text,
         fontSize: rf(1.8),
         fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    alertContainer: {
+        backgroundColor: theme.primary.main,
+        borderRadius: 16,
+        padding: 20,
+        width: '80%',
+        maxWidth: 400,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 4,
+    },
+    alertText: {
+        color: theme.primary.text,
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 18,
+    },
+    alertButton: {
+        backgroundColor: theme.primary.button,
+        borderRadius: 30,
+        paddingVertical: 8,
+        paddingHorizontal: 24,
+        marginTop: 4,
+    },
+    alertButtonText: {
+        color: theme.primary.text,
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 }); 

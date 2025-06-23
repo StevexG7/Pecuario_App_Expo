@@ -1,9 +1,17 @@
+import { API_CONFIG } from '../config/api.config';
 import { apiClient } from './api.client';
 
-export const getMisLotes = async () => {
-  return await apiClient.get('/lote/mis-lotes');
+export interface Lote {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  // Agregar más campos según la respuesta del backend
+}
+
+export const registrarLote = async (data: Partial<Lote>) => {
+  return await apiClient.post(API_CONFIG.ENDPOINTS.LOTE.REGISTRAR, data);
 };
 
-export const getMisFichas = async () => {
-  return await apiClient.get('/ingreso/mis-fichas');
+export const getMisLotes = async () => {
+  return await apiClient.get<Lote[]>(API_CONFIG.ENDPOINTS.LOTE.MIS_LOTES);
 }; 

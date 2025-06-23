@@ -8,15 +8,14 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData extends LoginCredentials {
-    nombre: string;
+    name: string;
     email: string;
     password: string;
 }
 
 export interface AuthUser {
     id: string;
-    name?: string;
-    nombre?: string;
+    name: string;
     email: string;
 }
 
@@ -28,44 +27,36 @@ export interface AuthResponse {
 
 class AuthService {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
-        const response = await apiClient.post<any>(
+        const response = await apiClient.post<AuthResponse>(
             API_CONFIG.ENDPOINTS.AUTH.LOGIN,
             credentials
         );
 
-        const user = response.user || (response.usuario && {
-            id: response.usuario.id,
-            name: response.usuario.nombre,
-            email: response.usuario.email
-        });
-
-        if (!response.token || !response.refreshToken || !user) {
-            throw new ApiError(400, 'Respuesta de autenticación inválida');
+        if (!response.token || !response.refreshToken || !response.user) {
+            throw new ApiError(400, 'Respuesta de autenticación inválida del servidor.');
         }
 
         await this.setTokens(response.token, response.refreshToken);
-        return { token: response.token, refreshToken: response.refreshToken, user };
+        return response;
     }
 
     async register(data: RegisterData): Promise<AuthResponse> {
         try {
-            const response: any = await apiClient.post(
+            await apiClient.post(
                 API_CONFIG.ENDPOINTS.AUTH.REGISTER,
-                data
+                {
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                }
             );
             
-            const user = response.user || (response.usuario && {
-                id: response.usuario.id,
-                name: response.usuario.nombre,
-                email: response.usuario.email
+            const loginResponse = await this.login({
+                email: data.email,
+                password: data.password,
             });
 
-            if (!response.token || !response.refreshToken || !user) {
-                throw new ApiError(400, 'Respuesta de registro inválida');
-            }
-
-            await this.setTokens(response.token, response.refreshToken);
-            return { token: response.token, refreshToken: response.refreshToken, user };
+            return loginResponse;
         } catch (error) {
             if (error instanceof ApiError) {
                 throw error;

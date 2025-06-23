@@ -72,31 +72,45 @@ class ApiClient {
         this.axiosInstance.interceptors.response.use(
             (response: AxiosResponse) => response,
             async (error: AxiosError) => {
-                console.error('Response error:', error.response?.data || error.message);
+                // Log the error for debugging
+                if (error.response?.data) {
+                    console.error('Response error:', error.response.data);
+                } else {
+                    console.error('Response error:', error.message);
+                }
                 
                 const originalRequest = error.config;
                 if (!originalRequest) {
                     return Promise.reject(new ApiError(500, 'No request configuration available'));
                 }
 
-                // Handle network errors
+                // Handle network errors (no response)
                 if (!error.response) {
                     return Promise.reject(new ApiError(0, 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'));
                 }
 
+                // Handle HTML responses (like ngrok error pages)
+                if (typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE html>')) {
+                    return Promise.reject(new ApiError(503, 'El servidor no está disponible en este momento. Inténtalo más tarde.'));
+                }
+
                 if (error.response.status === 401 && !this.isRefreshing) {
                     this.isRefreshing = true;
+                    console.log('🔄 Intentando renovar token...');
 
                     try {
                         const refreshToken = await AsyncStorage.getItem('refresh_token');
                         if (!refreshToken) {
+                            console.log('❌ No hay refresh token disponible');
                             throw new Error('No refresh token available');
                         }
 
+                        console.log('🔄 Enviando solicitud de renovación...');
                         const response = await this.axiosInstance.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN, {
                             refreshToken,
                         });
                         
+                        console.log('✅ Token renovado exitosamente');
                         const { token } = response.data;
                         await AsyncStorage.setItem('auth_token', token);
                         
@@ -116,6 +130,7 @@ class ApiClient {
                         }
                         return this.axiosInstance(originalRequest);
                     } catch (refreshError) {
+                        console.error('❌ Error al renovar token:', refreshError);
                         // Clear tokens and queue
                         await AsyncStorage.multiRemove(['auth_token', 'refresh_token']);
                         this.failedQueue = [];
@@ -135,7 +150,13 @@ class ApiClient {
                 // Handle other errors
                 const status = error.response.status;
                 const errorData = error.response.data as ErrorResponse;
-                const message = errorData?.message || this.getDefaultErrorMessage(status);
+                const message = errorData?.message || errorData?.error || this.getDefaultErrorMessage(status);
+                
+                // Si es un error de token expirado y no estamos refrescando, limpiar tokens
+                if (status === 401 && !this.isRefreshing) {
+                    console.log('🔒 Limpiando tokens por error de autenticación');
+                    AsyncStorage.multiRemove(['auth_token', 'refresh_token']).catch(console.error);
+                }
                 
                 return Promise.reject(new ApiError(status, message, errorData));
             }

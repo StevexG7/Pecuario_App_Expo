@@ -36,6 +36,7 @@ const AppAlert = ({ message, onClose }: { message: string; onClose: () => void }
 
 export default function Formulario() {
     const [activeTab, setActiveTab] = useState('Formulario');
+    const [isTabBarTransparent, setIsTabBarTransparent] = useState(false);
     const router = useRouter();
     const [gender, setGender] = useState<Gender | null>(null);
     const [purpose, setPurpose] = useState<Purpose | null>(null);
@@ -63,8 +64,26 @@ export default function Formulario() {
                 router.replace('/formulario' as any);
                 break;
             case 'Perfil':
+                router.replace('/perfil');
                 break;
         }
+    };
+
+    // Función para detectar el scroll y ajustar la transparencia de la barra
+    const handleScroll = (event: any) => {
+        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+        const scrollY = contentOffset.y;
+        const contentHeight = contentSize.height;
+        const screenHeight = layoutMeasurement.height;
+        
+        // Calcular si estamos cerca del final del contenido
+        const distanceFromBottom = contentHeight - scrollY - screenHeight;
+        const threshold = 150; // Distancia en píxeles desde el final
+        
+        // Hacer transparente si estamos cerca del final o si hay poco contenido
+        const shouldBeTransparent = distanceFromBottom < threshold || contentHeight < screenHeight;
+        
+        setIsTabBarTransparent(shouldBeTransparent);
     };
 
     const handleLotChange = (text: string) => {
@@ -86,7 +105,14 @@ export default function Formulario() {
 
         if (!Object.values(newErrors).some(error => error)) {
             try {
+                // Generar nombre del lote automáticamente
+                const genderText = gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : 'Animal';
+                const breedText = breed ? breed.charAt(0).toUpperCase() + breed.slice(1) : 'Sin raza';
+                const purposeText = purpose ? purpose.charAt(0).toUpperCase() + purpose.slice(1) : 'Sin propósito';
+                const nombreLote = `${genderText} ${breedText} - ${purposeText}`;
+                
                 const animalData = {
+                    nombre_lote: nombreLote,
                     genero: gender === 'hembra' ? 'Hembra' : 'Macho',
                     proposito: purpose!,
                     raza: breed!,
@@ -99,7 +125,7 @@ export default function Formulario() {
 
                 setAlert('Animales registrados exitosamente');
                 setTimeout(() => {
-                    router.replace('/inicio');
+                    router.replace('/ganado');
                 }, 1500);
             } catch (err: any) {
                 console.error('Error completo:', err);
@@ -136,7 +162,7 @@ export default function Formulario() {
                 }} 
             />
             <AppAlert message={alert ?? ''} onClose={() => setAlert(null)} />
-            <ScrollView style={styles.scrollView}>
+            <ScrollView style={styles.scrollView} onScroll={handleScroll}>
                 <View style={styles.content}>
                     <Text style={styles.title}>Registro de Ganado</Text>
                     
@@ -197,6 +223,16 @@ export default function Formulario() {
                         <Text style={styles.errorText}>Ingresa una cantidad válida (1-999)</Text>
                     )}
 
+                    {/* Vista previa del nombre del lote */}
+                    {gender && breed && purpose && (
+                        <View style={styles.previewContainer}>
+                            <Text style={styles.previewLabel}>Nombre del lote que se creará:</Text>
+                            <Text style={styles.previewText}>
+                                {`${gender.charAt(0).toUpperCase() + gender.slice(1)} ${breed.charAt(0).toUpperCase() + breed.slice(1)} - ${purpose.charAt(0).toUpperCase() + purpose.slice(1)}`}
+                            </Text>
+                        </View>
+                    )}
+
                     <TouchableOpacity 
                         style={styles.submitButton}
                         onPress={handleSubmit}
@@ -214,7 +250,11 @@ export default function Formulario() {
 
                 </View>
             </ScrollView>
-            <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
+            <CustomTabBar 
+                activeTab={activeTab} 
+                onTabPress={handleTabPress}
+                isTransparent={isTabBarTransparent}
+            />
         </SafeAreaView>
     );
 }
@@ -340,5 +380,22 @@ const styles = StyleSheet.create({
         color: theme.primary.text,
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    previewContainer: {
+        marginTop: rh(2),
+        padding: rw(4),
+        backgroundColor: theme.primary.main,
+        borderRadius: rw(2),
+        alignItems: 'center',
+    },
+    previewLabel: {
+        color: theme.primary.text,
+        fontSize: rf(1.6),
+        fontWeight: 'bold',
+        marginBottom: rh(1),
+    },
+    previewText: {
+        color: theme.primary.text,
+        fontSize: rf(1.4),
     },
 }); 

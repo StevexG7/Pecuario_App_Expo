@@ -1,5 +1,3 @@
-import { API_CONFIG } from '../config/api.config';
-import { apiClient, ApiError } from './api.client';
 
 export interface DailyActivity {
     id: string;
@@ -34,6 +32,8 @@ export interface ActivityStats {
     energySavings: EnergySavings;
 }
 
+// Servicio temporalmente deshabilitado - las rutas no existen en el backend actual
+/*
 class ActivitiesService {
     async getDailyActivities(): Promise<DailyActivity[]> {
         try {
@@ -91,4 +91,5 @@ class ActivitiesService {
     }
 }
 
-export const activitiesService = new ActivitiesService(); 
+export const activitiesService = new ActivitiesService();
+*/ 

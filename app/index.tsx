@@ -250,27 +250,34 @@ export default function Login() {
                         style={styles.loginButton}
                         onPress={handleSubmit}
                         disabled={loading}
+                        activeOpacity={0.8}
                     >
-                        <Text style={styles.loginButtonText}>
-                            {loading ? 'Procesando...' : isLogin ? 'Iniciar Sesión' : 'Registrarse'}
-                        </Text>
-                        <Ionicons name="arrow-forward" size={24} color={theme.primary.contrastText} />
+                        <Text style={styles.loginButtonText}>{isLogin ? 'Ingresar' : 'Registrarse'}</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                        style={[styles.switchModeButton, { marginTop: rh(4) }]}
+                    <TouchableOpacity
+                        style={styles.switchModeButton}
                         onPress={handleSwitchMode}
                     >
                         <Text style={styles.switchModeText}>
-                            {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
+                            {isLogin ? '¿No tienes una cuenta? ' : '¿Ya tienes una cuenta? '}
+                            <Text style={{ fontWeight: 'bold' }}>
+                                {isLogin ? 'Regístrate' : 'Ingresa'}
+                            </Text>
                         </Text>
                     </TouchableOpacity>
 
+                    {/* --- ENLACE DE RECUPERACIÓN (REUBICADO) --- */}
                     {isLogin && (
-                        <TouchableOpacity style={[styles.forgotPassword, { marginTop: rh(3) }]} onPress={() => router.push('/recoverpass')}>
+                        <TouchableOpacity 
+                            style={styles.forgotPasswordButton}
+                            onPress={() => router.push('/recoverpass')}
+                        >
                             <Text style={styles.forgotPasswordText}>¿Olvidaste tu contraseña?</Text>
                         </TouchableOpacity>
                     )}
+                    {/* ------------------------------------------- */}
+
                 </Animated.View>
             </KeyboardAvoidingView>
             <View style={styles.copyrightContainer}>
@@ -343,9 +350,9 @@ const styles = StyleSheet.create({
     },
     eyeButton: {
         position: 'absolute',
-        right: rw(4),
-        top: rh(1),
-        padding: rw(1),
+        right: 12,
+        height: '100%',
+        justifyContent: 'center',
     },
     loginButton: {
         width: '100%',
@@ -369,23 +376,23 @@ const styles = StyleSheet.create({
     },
     switchModeText: {
         color: theme.primary.text,
-        fontSize: rf(1.8),
-        textDecorationLine: 'underline',
+        fontSize: rf(1.9),
+        textAlign: 'center',
     },
-    forgotPassword: {
+    forgotPasswordButton: {
         marginTop: rh(2.5),
     },
     forgotPasswordText: {
-        textDecorationLine: 'underline',
-        fontSize: rf(1.8),
         color: theme.primary.text,
+        fontSize: rf(1.8),
         textAlign: 'center',
+        textDecorationLine: 'underline',
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     alertContainer: {
         backgroundColor: theme.primary.main,

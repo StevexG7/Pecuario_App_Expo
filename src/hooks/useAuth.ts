@@ -26,12 +26,22 @@ export const useAuth = () => {
             const isAuthenticated = await authService.isAuthenticated();
             if (isAuthenticated) {
                 const userData = await authService.getCurrentUser();
-                setState(prev => ({
-                    ...prev,
-                    user: userData,
-                    isAuthenticated: !!userData,
-                    loading: false,
-                }));
+                if (userData) {
+                    setState(prev => ({
+                        ...prev,
+                        user: userData,
+                        isAuthenticated: true,
+                        loading: false,
+                    }));
+                } else {
+                    // Si no se puede obtener el usuario, limpiar tokens
+                    console.log('🔒 Limpiando tokens - no se pudo obtener usuario');
+                    await authService.logout();
+                    setState(prev => ({
+                        ...prev,
+                        loading: false,
+                    }));
+                }
             } else {
                 setState(prev => ({
                     ...prev,
@@ -39,6 +49,9 @@ export const useAuth = () => {
                 }));
             }
         } catch (err) {
+            console.error('❌ Error al verificar autenticación:', err);
+            // Si hay error, limpiar tokens y redirigir al login
+            await authService.logout();
             setState(prev => ({
                 ...prev,
                 error: err instanceof ApiError ? err.message : 'Error checking authentication status',

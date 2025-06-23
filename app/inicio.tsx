@@ -4,13 +4,13 @@ import { Stack, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, StatusBar as RNStatusBar, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CustomTabBar from '../components/CustomTabBar';
 import { useAuth } from '../src/hooks/useAuth';
 
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? RNStatusBar.currentHeight || 24 : 44;
-const HEADER_HEIGHT = rh(12);
+const HEADER_HEIGHT = rh(14);
 
 
 // Componente animado para los puntos sobre la línea
@@ -98,8 +98,10 @@ const AnimatedDotsLine = ({
 };
 
 export default function Inicio() {
+    const insets = useSafeAreaInsets();
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('Inicio');
+    const [isTabBarTransparent, setIsTabBarTransparent] = useState(false);
     const router = useRouter();
     const dailyCards = [
         {
@@ -126,7 +128,7 @@ export default function Inicio() {
             value: '5/30',
             bold: '5',
         }
-        // Puedes agregar más cards aquí
+        // Parte para mas cards
     ];
     const handleTabPress = (tab: string) => {
         if (tab === activeTab) return; // Si ya estamos en esa pestaña, no hacer nada
@@ -146,18 +148,42 @@ export default function Inicio() {
                 break;
         }
     };
+
+    // Función para detectar el scroll y ajustar la transparencia de la barra
+    const handleScroll = (event: any) => {
+        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+        const scrollY = contentOffset.y;
+        const contentHeight = contentSize.height;
+        const screenHeight = layoutMeasurement.height;
+        
+        // Calcular si estamos cerca del final del contenido
+        const distanceFromBottom = contentHeight - scrollY - screenHeight;
+        const threshold = 150; // Distancia en píxeles desde el final
+        
+        // Hacer transparente si estamos cerca del final o si hay poco contenido
+        const shouldBeTransparent = distanceFromBottom < threshold || contentHeight < screenHeight;
+        
+        setIsTabBarTransparent(shouldBeTransparent);
+    };
+
+    const headerDynamicHeight = HEADER_HEIGHT + insets.top;
+
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
             <Stack.Screen options={{ headerShown: false }} />
-            <View style={styles.welcomeHeader}>
+            <View style={[styles.welcomeHeader, { height: headerDynamicHeight, paddingTop: insets.top }]}>
                 <View style={{ flex: 1 }}>
                     <Text style={styles.welcomeSmall}>Bienvenido(a)</Text>
-                    <Text style={styles.welcomeName}>{user?.name || user?.nombre || ''}</Text>
+                    <Text style={styles.welcomeName}>{user?.name || (user as any)?.nombre || ''}</Text>
                 </View>
                 <Image source={require('../assets/images/Logo.png')} style={styles.logo} resizeMode="contain" />
             </View>
-            <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingTop: HEADER_HEIGHT }}>
-                <View style={{ flex: 1, marginTop: 1 }}>
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={{ paddingTop: headerDynamicHeight + rh(4) }}
+                onScroll={handleScroll}
+            >
+                <View style={{ flex: 1, marginTop: 1, paddingHorizontal: rw(4) }}>
                     <View style={styles.dailyContainer}>
                         <Text style={styles.sectionTitle}>Actividades diarias</Text>
                         <View style={styles.dailyScrollWrapper}>
@@ -217,7 +243,11 @@ export default function Inicio() {
                     </View>
                 </View>
             </ScrollView>
-            <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
+            <CustomTabBar 
+                activeTab={activeTab} 
+                onTabPress={handleTabPress}
+                isTransparent={isTabBarTransparent}
+            />
         </SafeAreaView>
     );
 }
@@ -226,25 +256,29 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.secondary.background,
-        paddingHorizontal: rw(2.5),
-        paddingTop: HEADER_HEIGHT,
-        justifyContent: 'flex-start',
     },
     welcomeHeader: {
-        borderRadius: rw(4),
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: rw(4),
-        paddingTop: rh(3.5),
-        paddingBottom: rh(2),
-        backgroundColor: theme.primary.main,
-        height: HEADER_HEIGHT,
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 10,
+        backgroundColor: theme.primary.main,
+        borderBottomLeftRadius: 25,
+        borderBottomRightRadius: 25,
+        paddingHorizontal: rw(5),
+        paddingBottom: rh(2),
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 5,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 15,
+        elevation: 8,
     },
     welcomeSmall: {
         color: theme.primary.text,
@@ -258,7 +292,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     dailyContainer: {
-        marginTop: rh(-12),
+        marginTop: 0, // Reset margin
         marginBottom: rh(1.5),
         maxHeight: rh(16),
     },
@@ -267,7 +301,6 @@ const styles = StyleSheet.create({
         color: '#A0A3BD',
         fontWeight: '600',
         marginBottom: rh(0.8),
-        marginLeft: rw(1),
     },
     dailyScrollWrapper: {
         height: rh(12),
@@ -312,7 +345,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginTop: rh(1.5),
         marginBottom: rh(1.2),
-        marginLeft: rw(1),
     },
     statsCol: {
         gap: 16,
@@ -368,6 +400,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         alignSelf: 'flex-end',
+        marginBottom: rh(3),
     },
     scrollView: {
         flex: 1,

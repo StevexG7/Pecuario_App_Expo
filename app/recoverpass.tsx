@@ -3,8 +3,9 @@ import React, { useRef, useState } from 'react';
 import { Animated, Easing, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import SixDigitInput from '../components/SixDigitInput';
 import { theme } from '../constants/Theme';
+import { API_CONFIG } from '../src/config/api.config';
 
-const API_URL = 'https://e737-179-1-226-179.ngrok-free.app/api';
+const API_URL = API_CONFIG.BASE_URL;
 
 export default function RecoverPass() {
     const [step, setStep] = useState<'email' | 'code' | 'password'>('email');
@@ -45,7 +46,7 @@ export default function RecoverPass() {
         setLoading(true);
         setAlert(null);
         try {
-            const res = await fetch(`${API_URL}/auth/request-reset-code`, {
+            const res = await fetch(`${API_URL}${API_CONFIG.ENDPOINTS.AUTH.REQUEST_RESET_CODE}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -74,7 +75,7 @@ export default function RecoverPass() {
         setLoading(true);
         setAlert(null);
         try {
-            const res = await fetch(`${API_URL}/auth/verify-reset-code`, {
+            const res = await fetch(`${API_URL}${API_CONFIG.ENDPOINTS.AUTH.VERIFY_RESET_CODE}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, code }),
@@ -98,7 +99,7 @@ export default function RecoverPass() {
         setLoading(true);
         setAlert(null);
         try {
-            const res = await fetch(`${API_URL}/auth/request-reset-code`, {
+            const res = await fetch(`${API_URL}${API_CONFIG.ENDPOINTS.AUTH.REQUEST_RESET_CODE}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -132,7 +133,7 @@ export default function RecoverPass() {
         setLoading(true);
         setAlert(null);
         try {
-            const res = await fetch(`${API_URL}/auth/reset-password-with-code`, {
+            const res = await fetch(`${API_URL}${API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD_WITH_CODE}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, code, new_password: password }),

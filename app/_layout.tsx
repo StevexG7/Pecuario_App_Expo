@@ -18,12 +18,17 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return;
 
-    // Check if the user is inside a protected route group.
-    const inProtectedArea = segments.length > 0;
+    // Un área protegida es cualquier ruta que NO sea la de inicio o la de recuperar contraseña.
+    const isProtectedRoute = segments.length > 0 && segments[0] !== 'recoverpass';
 
-    if (!isAuthenticated && inProtectedArea) {
-      // User is not authenticated and trying to access a protected screen, so redirect to login.
+    if (!isAuthenticated && isProtectedRoute) {
+      // Si el usuario no está autenticado y trata de acceder a una ruta protegida,
+      // lo redirigimos al login.
       router.replace('/');
+    }
+    // Opcional: si el usuario YA está autenticado y visita el login/recuperar, redirigirlo a 'inicio'.
+    else if (isAuthenticated && !isProtectedRoute) {
+        router.replace('/inicio');
     }
   }, [isAuthenticated, loading, segments]);
 
@@ -43,36 +48,15 @@ function RootLayoutNav() {
         gestureEnabled: false,
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: 'Login',
-        }}
-      />
-      <Stack.Screen
-        name="inicio"
-        options={{
-          headerShown: false,
-          animation: 'none',
-          gestureEnabled: false,
-        }}
-      />
-      <Stack.Screen
-        name="ganado"
-        options={{
-          headerShown: false,
-          animation: 'none',
-          gestureEnabled: false,
-        }}
-      />
-      <Stack.Screen
-        name="formulario"
-        options={{
-          headerShown: false,
-          animation: 'none',
-          gestureEnabled: false,
-        }}
-      />
+      <Stack.Screen name="index" options={{ title: 'Login' }} />
+      <Stack.Screen name="recoverpass" options={{ title: 'Recuperar Contraseña' }} />
+      <Stack.Screen name="transition" options={{ title: 'Transición' }} />
+
+      {/* Pantallas principales de la app */}
+      <Stack.Screen name="inicio" />
+      <Stack.Screen name="ganado" />
+      <Stack.Screen name="formulario" />
+      <Stack.Screen name="perfil" />
     </Stack>
   );
 }

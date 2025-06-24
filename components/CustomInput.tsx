@@ -49,6 +49,7 @@ export default function CustomInput({ label, value, onChange, placeholder, optio
           onChangeText={onChange}
           placeholder={placeholder}
           placeholderTextColor="#888"
+          keyboardType={label.toLowerCase().includes('peso') ? 'numeric' : 'default'}
         />
       )}
     </View>

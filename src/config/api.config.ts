@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-    BASE_URL: 'https://0515-191-109-191-6.ngrok-free.app/api',
+    BASE_URL: 'https://291e-191-109-191-6.ngrok-free.app/api',
     TIMEOUT: 30000, // estos son 30 segundos de espera para la api
     ENDPOINTS: {
         AUTH: {
@@ -18,15 +18,16 @@ export const API_CONFIG = {
         ANIMAL: {
             REGISTRAR: '/animal/registrar',
             MIS_FICHAS: '/animal/mis-fichas',
-            FICHA: '/animal/ficha', // Se usará con /<int:lote_id>
-            OBTENER_PESOS: '/animal/lote', // Se usará con /<lote_id>/pesos
-            REGISTRAR_PESO_ANIMAL: '/animal', // Se usará con /<animal_id>/peso
-            RECALCULAR_PESOS_LOTE: '/animal/lote', // Se usará con /<lote_id>/recalcular-pesos
-            // URL final será: /api/animal/lote/{lote_id}/pesos
+            FICHA: '/animal/ficha', 
+            OBTENER_PESOS: '/animal/lote', 
+            REGISTRAR_PESO_ANIMAL: '/animal', 
+            RECALCULAR_PESOS_LOTE: '/animal/lote', 
         },
         LOTE: {
             REGISTRAR: '/lote/registrar',
             MIS_LOTES: '/lote/mis-lotes',
+            DIETA: '/animal/lote',
+            ELIMINAR: '/lote',
         },
     },
 }; 

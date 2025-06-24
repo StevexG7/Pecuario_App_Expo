@@ -1,22 +1,21 @@
 import { theme } from '@/constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
+  Modal,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomTabBar from '../components/CustomTabBar';
+import FichaCard from '../components/FichaCard';
 import { FichaAnimal, obtenerDetalleLoteConPesos, obtenerMisFichas, probarEndpointPesos, recalcularPesosLote } from '../src/services/animal.service';
+import { eliminarLote } from '../src/services/lote.service';
 
 // Función para formatear el peso en kg o toneladas
 const formatWeight = (kg: number): string => {
@@ -28,17 +27,45 @@ const formatWeight = (kg: number): string => {
     return `${kg} kg`;
 };
 
+const AppAlert = ({ message, onClose }: { message: string; onClose: () => void }) => {
+  if (!message) return null;
+  return (
+    <Modal
+      transparent
+      visible={!!message}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.alertContainer}>
+          <Text style={styles.alertText}>{message}</Text>
+          <TouchableOpacity style={styles.alertButton} onPress={onClose}>
+            <Text style={styles.alertButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export default function Ganado() {
   const [activeTab, setActiveTab] = useState('Ganado');
   const [fichas, setFichas] = useState<FichaAnimal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isTabBarTransparent, setIsTabBarTransparent] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [alert, setAlert] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
   
-  const fetchFichasConPesos = async () => {
-    setLoading(true);
+  const fetchFichasConPesos = async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       console.log('🔄 Iniciando fetchFichasConPesos...');
@@ -98,6 +125,7 @@ export default function Ganado() {
       setError(err.message || 'Error al cargar las fichas');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -105,16 +133,9 @@ export default function Ganado() {
     fetchFichasConPesos();
   }, []);
 
-  // Recargar datos cuando la pantalla vuelve a estar en foco (ej. al regresar del formulario)
-  useFocusEffect(
-    useCallback(() => {
-      fetchFichasConPesos();
-    }, [])
-  );
-
   // Función para recargar datos (útil cuando se regresa del formulario)
   const handleRefresh = () => {
-    fetchFichasConPesos();
+    fetchFichasConPesos(true);
   };
 
   // Función para probar el endpoint de pesos
@@ -138,27 +159,15 @@ export default function Ganado() {
       console.log(`🔄 Recalculando pesos para lote ${loteId}...`);
       await recalcularPesosLote(loteId);
       // Recargar los datos después de recalcular
-      await fetchFichasConPesos();
+      await fetchFichasConPesos(true);
     } catch (error) {
       console.error('❌ Error al recalcular pesos:', error);
     }
   };
 
-  // Función para detectar el scroll y ajustar la transparencia de la barra
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    const scrollY = contentOffset.y;
-    const contentHeight = contentSize.height;
-    const screenHeight = layoutMeasurement.height;
-    
-    // Calcular si estamos cerca del final de la lista
-    const distanceFromBottom = contentHeight - scrollY - screenHeight;
-    const threshold = 150; // Distancia en píxeles desde el final
-    
-    // Hacer transparente si estamos cerca del final o si hay poco contenido
-    const shouldBeTransparent = distanceFromBottom < threshold || contentHeight < screenHeight;
-    
-    setIsTabBarTransparent(shouldBeTransparent);
+  const handleDeleteLote = (loteId: number) => {
+    setConfirmDeleteId(loteId);
+    setShowConfirm(true);
   };
 
   const handleTabPress = (tab: string) => {
@@ -169,53 +178,18 @@ export default function Ganado() {
     }
   };
 
-  const renderFicha = ({ item, index }: { item: FichaAnimal; index: number }) => (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{`${index + 1}. ${item.nombre_lote}`}</Text>
-      <View style={styles.infoRow}>
-        <Text style={styles.cardText}><Ionicons name="male-female-outline" size={16} /> {item.genero}</Text>
-        <Text style={styles.cardText}><Ionicons name="paw-outline" size={16} /> {item.raza}</Text>
-      </View>
-      <View style={styles.infoRow}>
-        <Text style={styles.cardText}><Ionicons name="logo-stackoverflow" size={16} /> {item.cantidad} animales</Text>
-        {item.proposito && (
-          <Text style={styles.cardText}><Ionicons name="information-circle-outline" size={16} /> {item.proposito}</Text>
-        )}
-      </View>
-      
-      {/* Sección de Pesos */}
-      <View style={styles.weightSection}>
-        {/* Mostrar peso total */}
-        {item.peso_general_lote !== undefined ? (
-          <>
-            <View style={styles.infoRow}>
-              <Text style={styles.weightTitle}>Peso Total del Lote:</Text>
-              <Text style={styles.weightValue}>{formatWeight(item.peso_general_lote)}</Text>
-            </View>
-            {/* Mostrar SIEMPRE el peso individual estimado si está definido */}
-            <View style={styles.infoRow}>
-              <Text style={styles.weightTitle}>Peso promedio individual:</Text>
-              <Text style={styles.weightValue}>
-                {item.peso_individual_estimado !== undefined
-                  ? formatWeight(item.peso_individual_estimado)
-                  : 'No disponible'}
-              </Text>
-            </View>
-          </>
-        ) : (
-          <View style={styles.noPesoContainer}>
-            <Text style={styles.noPesoText}>No hay datos de peso disponibles</Text>
-            <TouchableOpacity 
-              style={styles.recalcularButton}
-              onPress={() => handleRecalcularPesos(item.id)}
-            >
-              <Text style={styles.recalcularButtonText}>Recalcular Pesos</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </View>
-  );
+  const renderFicha = useCallback(({ item, index }: { item: FichaAnimal; index: number }) => (
+    <FichaCard
+      ficha={item}
+      index={index}
+      onPress={() => router.push({ pathname: '/detalle-ficha/[id]', params: { id: item.id } })}
+      onDelete={handleDeleteLote}
+    />
+  ), [router]);
+
+  const keyExtractor = useCallback((item: FichaAnimal) => {
+    return item.id ? item.id.toString() : `ficha-${item.nombre_lote}-${item.cantidad}`;
+  }, []);
   
   const ListContent = () => {
     if (loading) {
@@ -237,24 +211,71 @@ export default function Ganado() {
       <FlatList
         data={fichas}
         renderItem={renderFicha}
-        keyExtractor={(item) => (item.id ? item.id.toString() : `ficha-${Math.random()}`)}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={<Text style={[styles.centered, styles.emptyText]}>No tienes fichas registradas.</Text>}
         ref={flatListRef}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
         showsVerticalScrollIndicator={true}
         bounces={true}
-        overScrollMode="always"
+        refreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        scrollEnabled={true}
         nestedScrollEnabled={false}
       />
     );
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <AppAlert message={alert ?? ''} onClose={() => setAlert(null)} />
+      {showConfirm && (
+        <Modal
+          transparent
+          visible={showConfirm}
+          animationType="fade"
+          onRequestClose={() => setShowConfirm(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.alertContainer}>
+              <Text style={[styles.alertText, { fontWeight: 'bold', fontSize: 20, marginBottom: 8 }]}>Eliminar lote</Text>
+              <Text style={styles.alertText}>¿Estás seguro de que deseas eliminar este lote?</Text>
+              <View style={{ flexDirection: 'row', gap: 16 }}>
+                <TouchableOpacity
+                  style={[styles.alertButton, { backgroundColor: '#ff4444', marginRight: 8 }]}
+                  onPress={async () => {
+                    if (typeof confirmDeleteId === 'number') {
+                      try {
+                        await eliminarLote(confirmDeleteId);
+                        setAlert('Lote eliminado correctamente.');
+                        setShowConfirm(false);
+                        setConfirmDeleteId(null);
+                        fetchFichasConPesos(true);
+                      } catch (err) {
+                        setAlert('No se pudo eliminar el lote.');
+                        setShowConfirm(false);
+                        setConfirmDeleteId(null);
+                      }
+                    }
+                  }}
+                >
+                  <Text style={styles.alertButtonText}>Eliminar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.alertButton}
+                  onPress={() => {
+                    setShowConfirm(false);
+                    setConfirmDeleteId(null);
+                  }}
+                >
+                  <Text style={styles.alertButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Fichas de Ganado</Text>
         <View style={styles.headerButtons}>
@@ -272,9 +293,9 @@ export default function Ganado() {
       <CustomTabBar 
         activeTab={activeTab} 
         onTabPress={handleTabPress}
-        isTransparent={isTabBarTransparent}
+        isTransparent={false}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -304,7 +325,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   card: {
     backgroundColor: theme.primary.main,
@@ -420,5 +441,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: theme.primary.text,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertContainer: {
+    backgroundColor: theme.primary.main,
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 4,
+  },
+  alertText: {
+    color: theme.primary.text,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  alertButton: {
+    backgroundColor: theme.primary.button,
+    borderRadius: 30,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    marginTop: 4,
+  },
+  alertButtonText: {
+    color: theme.primary.text,
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

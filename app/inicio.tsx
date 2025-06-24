@@ -7,7 +7,9 @@ import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CustomTabBar from '../components/CustomTabBar';
+import EstabloMiniCard from '../components/EstabloMiniCard';
 import { useAuth } from '../src/hooks/useAuth';
+import { obtenerMisFichas } from '../src/services/animal.service';
 
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? RNStatusBar.currentHeight || 24 : 44;
 const HEADER_HEIGHT = rh(14);
@@ -130,6 +132,24 @@ export default function Inicio() {
         }
         // Parte para mas cards
     ];
+    const [lotes, setLotes] = useState<any[]>([]);
+    const [loadingLotes, setLoadingLotes] = useState(true);
+
+    useEffect(() => {
+        const fetchLotes = async () => {
+            setLoadingLotes(true);
+            try {
+                const data = await obtenerMisFichas();
+                setLotes(data);
+            } catch (e) {
+                setLotes([]);
+            } finally {
+                setLoadingLotes(false);
+            }
+        };
+        fetchLotes();
+    }, []);
+
     const handleTabPress = (tab: string) => {
         if (tab === activeTab) return; // Si ya estamos en esa pestaña, no hacer nada
         setActiveTab(tab);
@@ -208,13 +228,31 @@ export default function Inicio() {
                             </ScrollView>
                         </View>
                     </View>
+                    <Text style={[styles.sectionTitle, { marginTop: rh(3) }]}>Establos activos</Text>
+                    {loadingLotes ? (
+                        <Text style={{ color: theme.primary.text, marginVertical: 16 }}>Cargando establos...</Text>
+                    ) : (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
+                            {lotes.length === 0 && (
+                                <Text style={{ color: theme.primary.text, opacity: 0.7, marginRight: 16 }}>No tienes lotes registrados.</Text>
+                            )}
+                            {lotes.map((lote, idx) => (
+                                <View key={lote.id} style={{ width: 110, marginRight: 16 }}>
+                                    <EstabloMiniCard
+                                        lote={lote}
+                                        onPress={() => router.push({ pathname: '/detalle-ficha/[id]', params: { id: lote.id } })}
+                                    />
+                                </View>
+                            ))}
+                        </ScrollView>
+                    )}
                     <Text style={styles.sectionTitle2}>Tus estadísticas</Text>
                     <View style={styles.statsCol}>
                         <View style={styles.statsCard}>
                             <View style={styles.statsCardRow}>
                                 <MaterialCommunityIcons name="cow" size={32} color={theme.primary.text} style={styles.statsIcon} />
                                 <Text style={styles.statsTitle}>Estado del ganado</Text>
-                                <TouchableOpacity style={styles.statsArrow}>
+                                <TouchableOpacity style={styles.statsArrow} onPress={() => router.push('/ganado')}>
                                     <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
                                 </TouchableOpacity>
                             </View>
@@ -224,16 +262,6 @@ export default function Inicio() {
                             <View style={styles.statsCardRow}>
                                 <MaterialCommunityIcons name="shovel" size={32} color={theme.primary.text} style={styles.statsIcon} />
                                 <Text style={styles.statsTitle}>Dietas a vencer</Text>
-                                <TouchableOpacity style={styles.statsArrow}>
-                                    <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
-                                </TouchableOpacity>
-                            </View>
-                            <AnimatedDotsLine />
-                        </View>
-                        <View style={styles.statsCard}>
-                            <View style={styles.statsCardRow}>
-                                <MaterialCommunityIcons name="power-plug" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                                <Text style={styles.statsTitle}>Ahorro de alimentos</Text>
                                 <TouchableOpacity style={styles.statsArrow}>
                                     <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
                                 </TouchableOpacity>

@@ -7,6 +7,7 @@ export interface Animal {
   proposito: string;
   raza: string;
   cantidad: number;
+  peso?: number;
 }
 
 export interface FichaAnimal {
@@ -244,4 +245,9 @@ export const obtenerDetalleLoteConPesos = async (loteId: number): Promise<Detall
     console.error(`❌ Error al obtener detalle completo del lote ${loteId}:`, error);
     return null;
   }
-}; 
+};
+
+export async function obtenerDietaLote(loteId: number) {
+  const url = `${API_CONFIG.ENDPOINTS.LOTE.DIETA}/${loteId}/dieta`;
+  return await apiClient.get(url);
+} 

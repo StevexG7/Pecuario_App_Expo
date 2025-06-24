@@ -260,5 +260,3 @@ Esta barra permite navegar entre pantallas y resalta la pestaña activa con anim
 - [Curso gratuito de React Native en YouTube](https://www.youtube.com/results?search_query=react+native+español)
 
 ---
-
-¡Listo! Ahora tienes una base para aprender y enseñar a otros cómo funciona un proyecto real con TypeScript, TSX, React Native y Expo. Puedes convertir este archivo a PDF usando cualquier editor de Markdown o herramientas online como Dillinger o StackEdit. 

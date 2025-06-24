@@ -14,4 +14,8 @@ export const registrarLote = async (data: Partial<Lote>) => {
 
 export const getMisLotes = async () => {
   return await apiClient.get<Lote[]>(API_CONFIG.ENDPOINTS.LOTE.MIS_LOTES);
+};
+
+export const eliminarLote = async (loteId: number) => {
+  return await apiClient.delete(`${API_CONFIG.ENDPOINTS.LOTE.ELIMINAR}/${loteId}`);
 }; 

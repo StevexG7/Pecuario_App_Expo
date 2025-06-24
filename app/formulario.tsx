@@ -42,11 +42,13 @@ export default function Formulario() {
     const [purpose, setPurpose] = useState<Purpose | null>(null);
     const [breed, setBreed] = useState<Breed | null>(null);
     const [lot, setLot] = useState('');
+    const [peso, setPeso] = useState('');
     const [errors, setErrors] = useState({
         gender: false,
         purpose: false,
         breed: false,
-        lot: false
+        lot: false,
+        peso: false
     });
     const [alert, setAlert] = useState<string | null>(null);
 
@@ -98,12 +100,18 @@ export default function Formulario() {
             gender: !gender,
             purpose: !purpose,
             breed: !breed,
-            lot: !lot || lot.length < 1 || parseInt(lot) < 1
+            lot: !lot || lot.length < 1 || parseInt(lot) < 1,
+            peso: !peso || isNaN(Number(peso)) || Number(peso) <= 0
         };
 
         setErrors(newErrors);
 
         if (!Object.values(newErrors).some(error => error)) {
+            if (Number(peso) < 300 || Number(peso) > 700) {
+                setErrors({ ...errors, peso: true });
+                setAlert('El peso debe estar entre 300 y 700 kg');
+                return;
+            }
             try {
                 // Generar nombre del lote automáticamente
                 const genderText = gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : 'Animal';
@@ -116,7 +124,8 @@ export default function Formulario() {
                     genero: gender === 'hembra' ? 'Hembra' : 'Macho',
                     proposito: purpose!,
                     raza: breed!,
-                    cantidad: parseInt(lot)
+                    cantidad: parseInt(lot),
+                    peso: Number(peso)
                 };
                 
                 console.log('Enviando datos al backend:', animalData);
@@ -221,6 +230,17 @@ export default function Formulario() {
                     />
                     {errors.lot && (
                         <Text style={styles.errorText}>Ingresa una cantidad válida (1-999)</Text>
+                    )}
+
+                    {/* Peso de una vaca/toro */}
+                    <CustomInput
+                        label="Peso de una vaca/toro del lote (kg) *"
+                        value={peso}
+                        onChange={setPeso}
+                        placeholder="Ej: 500"
+                    />
+                    {errors.peso && (
+                        <Text style={styles.errorText}>Ingresa un peso válido mayor a 300kg y menor a 700kg</Text>
                     )}
 
                     {/* Vista previa del nombre del lote */}

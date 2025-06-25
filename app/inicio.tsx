@@ -15,9 +15,24 @@ export default function Inicio() {
     useEffect(() => {
         const fetchLotes = async () => {
             try {
+                console.log('🔄 Fetching lotes...');
                 const response = await getMisLotes();
-                setLotes(response || []);
+                console.log('📦 Response from getMisLotes:', response);
+                console.log('📦 Response type:', typeof response);
+                console.log('📦 Is Array?', Array.isArray(response));
+                
+                // Asegurar que siempre sea un array
+                if (Array.isArray(response)) {
+                    setLotes(response);
+                } else if (response && typeof response === 'object' && (response as any).data && Array.isArray((response as any).data)) {
+                    // Si la respuesta está envuelta en un objeto con propiedad 'data'
+                    setLotes((response as any).data);
+                } else {
+                    console.warn('⚠️ Response is not an array, setting empty array');
+                    setLotes([]);
+                }
             } catch (e) {
+                console.error('❌ Error fetching lotes:', e);
                 setLotes([]);
             }
         };
@@ -113,16 +128,23 @@ export default function Inicio() {
             <View style={styles.sectionContainer}>
                 <Text style={styles.statsTitle}>Establos activos</Text>
                 <View style={styles.stablesGrid}>
-                    {lotes.length === 0 ? (
-                        <Text style={{ color: '#A3A6B7', textAlign: 'center', width: '100%' }}>No tienes lotes registrados.</Text>
-                    ) : (
-                        lotes.map((lote, idx) => (
+                    {(() => {
+                        console.log('🔍 Current lotes state:', lotes);
+                        console.log('🔍 Is lotes array?', Array.isArray(lotes));
+                        
+                        if (!lotes || !Array.isArray(lotes) || lotes.length === 0) {
+                            return (
+                                <Text style={{ color: '#A3A6B7', textAlign: 'center', width: '100%' }}>No tienes lotes registrados.</Text>
+                            );
+                        }
+                        
+                        return lotes.map((lote, idx) => (
                             <View key={lote.id || idx} style={[styles.activityCard, styles.stableCardGrid]}> 
                                 <RNImage source={require('../assets/icons/Grid.png')} style={styles.activityIcon} />
                                 <Text style={styles.stableNumber}>{lote.nombre || lote.id}</Text>
                             </View>
-                        ))
-                    )}
+                        ));
+                    })()}
                 </View>
             </View>
 

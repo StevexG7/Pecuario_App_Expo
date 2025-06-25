@@ -1,7 +1,7 @@
 import { theme } from '@/constants/Theme';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Image as RNImage, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomInput from '../components/CustomInput';
@@ -9,7 +9,7 @@ import CustomTabBar from '../components/CustomTabBar';
 import { registrarAnimal } from '../src/services/animal.service';
 
 type Gender = 'hembra' | 'macho';
-type Purpose = 'lechera' | 'cria' | 'levante' | 'seba';
+type Purpose = 'lechera' | 'cria' | 'levante' | 'ceba';
 type Breed = 'nelore' | 'criollo' | 'gyr' | 'brahman';
 
 // Componente de alerta centrada y modal (igual que en index.tsx)
@@ -36,7 +36,6 @@ const AppAlert = ({ message, onClose }: { message: string; onClose: () => void }
 
 export default function Formulario() {
     const [activeTab, setActiveTab] = useState('Formulario');
-    const [isTabBarTransparent, setIsTabBarTransparent] = useState(false);
     const router = useRouter();
     const [gender, setGender] = useState<Gender | null>(null);
     const [purpose, setPurpose] = useState<Purpose | null>(null);
@@ -53,39 +52,21 @@ export default function Formulario() {
     const [alert, setAlert] = useState<string | null>(null);
 
     const handleTabPress = (tab: string) => {
-        if (tab === activeTab) return;
         setActiveTab(tab);
         switch (tab) {
-            case 'Ganado':
-                router.replace('/ganado');
-                break;
             case 'Inicio':
                 router.replace('/inicio');
                 break;
+            case 'Ganado':
+                router.replace('/ganado');
+                break;
             case 'Formulario':
-                router.replace('/formulario' as any);
+                router.replace('/formulario');
                 break;
             case 'Perfil':
                 router.replace('/perfil');
                 break;
         }
-    };
-
-    // Función para detectar el scroll y ajustar la transparencia de la barra
-    const handleScroll = (event: any) => {
-        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-        const scrollY = contentOffset.y;
-        const contentHeight = contentSize.height;
-        const screenHeight = layoutMeasurement.height;
-        
-        // Calcular si estamos cerca del final del contenido
-        const distanceFromBottom = contentHeight - scrollY - screenHeight;
-        const threshold = 150; // Distancia en píxeles desde el final
-        
-        // Hacer transparente si estamos cerca del final o si hay poco contenido
-        const shouldBeTransparent = distanceFromBottom < threshold || contentHeight < screenHeight;
-        
-        setIsTabBarTransparent(shouldBeTransparent);
     };
 
     const handleLotChange = (text: string) => {
@@ -160,18 +141,16 @@ export default function Formulario() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-            <Stack.Screen 
-                options={{ 
-                    headerShown: true,
-                    title: 'Formulario',
-                    headerStyle: {
-                        backgroundColor: theme.primary.main,
-                    },
-                    headerTintColor: theme.primary.text,
-                }} 
-            />
+            {/* HEADER CURVO PERSONALIZADO */}
+            <View style={styles.headerContainer}>
+                <RNImage source={require('../assets/images/Header.png')} style={styles.headerBg} resizeMode="cover" />
+                <View style={styles.headerContentCentered}>
+                    <RNImage source={require('../assets/icons/House.png')} style={styles.headerUserIcon} resizeMode="contain" />
+                    <Text style={styles.headerName}>Formulario</Text>
+                </View>
+            </View>
             <AppAlert message={alert ?? ''} onClose={() => setAlert(null)} />
-            <ScrollView style={styles.scrollView} onScroll={handleScroll}>
+            <ScrollView style={styles.scrollView}>
                 <View style={styles.content}>
                     <Text style={styles.title}>Registro de Ganado</Text>
                     
@@ -199,7 +178,7 @@ export default function Formulario() {
                             setPurpose(val as Purpose);
                             setErrors(prev => ({ ...prev, purpose: false }));
                         }}
-                        options={gender === 'hembra' ? ['lechera', 'cria', 'levante'] : gender === 'macho' ? ['seba', 'levante'] : ['lechera', 'cria', 'levante', 'seba']}
+                        options={gender === 'hembra' ? ['lechera', 'cria', 'levante'] : gender === 'macho' ? ['ceba', 'levante'] : ['lechera', 'cria', 'levante', 'ceba']}
                         placeholder="Selecciona un propósito"
                     />
                     {errors.purpose && (
@@ -261,20 +240,23 @@ export default function Formulario() {
                     </TouchableOpacity>
 
                     {/* Botón para dirigirse a la vista del ganado */}
-                    <TouchableOpacity 
-                        style={styles.submitButton}
+                    <Text
+                        style={{
+                            color: theme.primary.text,
+                            textAlign: 'center',
+                            marginTop: 18,
+                            textDecorationLine: 'underline',
+                            fontWeight: '500',
+                            fontSize: 15,
+                        }}
                         onPress={() => router.replace('/ganado')}
                     >
-                        <Text style={styles.submitButtonText}>Ir a Ganado</Text>
-                    </TouchableOpacity>
+                        Ir a Ganado
+                    </Text>
 
                 </View>
             </ScrollView>
-            <CustomTabBar 
-                activeTab={activeTab} 
-                onTabPress={handleTabPress}
-                isTransparent={isTabBarTransparent}
-            />
+            <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} backgroundColor="#F0E8C9" />
         </SafeAreaView>
     );
 }
@@ -417,5 +399,43 @@ const styles = StyleSheet.create({
     previewText: {
         color: theme.primary.text,
         fontSize: rf(1.4),
+    },
+    headerContainer: {
+        width: '100%',
+        height: 100,
+        position: 'relative',
+        backgroundColor: '#F0E8C9',
+        borderBottomRightRadius: 120,
+        borderBottomLeftRadius: 0,
+        overflow: 'hidden',
+        marginBottom: 12,
+    },
+    headerBg: {
+        position: 'absolute',
+        width: '130%',
+        height: '100%',
+        top: 0,
+        left: '-15%',
+        zIndex: 2,
+    },
+    headerContentCentered: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        height: '100%',
+        width: '100%',
+        zIndex: 3,
+        marginTop: 10,
+        marginLeft: 25,
+    },
+    headerUserIcon: {
+        width: 40,
+        height: 40,
+        marginRight: 12,
+    },
+    headerName: {
+        color: '#23263B',
+        fontSize: 22,
+        fontWeight: 'bold',
     },
 }); 

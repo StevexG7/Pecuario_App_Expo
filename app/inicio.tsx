@@ -1,164 +1,36 @@
-import { theme } from '@/constants/Theme';
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Platform, StatusBar as RNStatusBar, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { responsiveFontSize as rf, responsiveHeight as rh, responsiveWidth as rw } from 'react-native-responsive-dimensions';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Image as RNImage, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CustomTabBar from '../components/CustomTabBar';
-import EstabloMiniCard from '../components/EstabloMiniCard';
+import { theme } from '../constants/Theme';
 import { useAuth } from '../src/hooks/useAuth';
-import { obtenerMisFichas } from '../src/services/animal.service';
-
-const STATUSBAR_HEIGHT = Platform.OS === 'android' ? RNStatusBar.currentHeight || 24 : 44;
-const HEADER_HEIGHT = rh(14);
-
-
-// Componente animado para los puntos sobre la línea
-const AnimatedDotsLine = ({
-    dotCount = 3,
-    duration = 1800,
-    dotColor = theme.primary.button,
-    lineColor = '#23263B',
-    style = {},
-}) => {
-    const dotAnims = useRef(Array.from({ length: dotCount }, () => new Animated.Value(0))).current;
-    const lineRef = useRef(null);
-
-    useEffect(() => {
-        let isMounted = true;
-        const animate = () => {
-            if (!isMounted) return;
-            dotAnims.forEach((anim, i) => {
-                anim.setValue(0);
-                Animated.timing(anim, {
-                    toValue: 1,
-                    duration,
-                    delay: i * (duration / dotCount / 1.5),
-                    useNativeDriver: true,
-                }).start(() => {
-                    if (i === dotCount - 1 && isMounted) animate();
-                });
-            });
-        };
-        animate();
-        return () => { isMounted = false; };
-    }, [dotAnims, duration, dotCount]);
-
-    // El ancho de la línea se obtiene en layout
-    const [lineW, setLineW] = React.useState(0);
-
-    return (
-        <View style={[{ flexDirection: 'row', alignItems: 'center', width: '100%' }, style]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', position: 'relative', flex: 1 }}>
-                {/* Línea */}
-                <View
-                    ref={lineRef}
-                    style={{
-                        flex: 1,
-                        height: 4,
-                        backgroundColor: lineColor,
-                        borderRadius: 2,
-                        marginHorizontal: 2,
-                        position: 'relative',
-                        overflow: 'visible',
-                    }}
-                    onLayout={e => setLineW(e.nativeEvent.layout.width)}
-                >
-                    {/* Puntos animados */}
-                    {lineW > 0 && dotAnims.map((anim, i) => {
-                        const translateX = anim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, lineW - 12], // 12 = dot size
-                        });
-                        const opacity = anim.interpolate({
-                            inputRange: [0, 0.85, 1],
-                            outputRange: [1, 1, 0],
-                        });
-                        return (
-                            <Animated.View
-                                key={i}
-                                style={{
-                                    position: 'absolute',
-                                    left: 0,
-                                    top: -4,
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: 6,
-                                    backgroundColor: dotColor,
-                                    transform: [{ translateX }],
-                                    opacity,
-                                }}
-                            />
-                        );
-                    })}
-                </View>
-            </View>
-        </View>
-    );
-};
+import { getMisLotes, Lote } from '../src/services/lote.service';
 
 export default function Inicio() {
-    const insets = useSafeAreaInsets();
     const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState('Inicio');
-    const [isTabBarTransparent, setIsTabBarTransparent] = useState(false);
     const router = useRouter();
-    const dailyCards = [
-        {
-            icon: <Ionicons name="checkmark" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
-            label: 'Cumplidas',
-            value: '20/30',
-            bold: '20',
-        },
-        {
-            icon: <MaterialIcons name="monitor" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
-            label: 'Alertas',
-            value: '10/30',
-            bold: '10',
-        },
-        {
-            icon: <Ionicons name="list" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
-            label: 'Formulario',
-            value: '5/30',
-            bold: '5',
-        },
-        {
-            icon: <Ionicons name="list" size={rf(3.2)} color={theme.primary.text} style={{ marginBottom: rh(1) }} />,
-            label: 'Calculo',
-            value: '5/30',
-            bold: '5',
-        }
-        // Parte para mas cards
-    ];
-    const [lotes, setLotes] = useState<any[]>([]);
-    const [loadingLotes, setLoadingLotes] = useState(true);
-
+    const [activeTab, setActiveTab] = React.useState('Inicio');
+    const [lotes, setLotes] = useState<Lote[]>([]);
     useEffect(() => {
         const fetchLotes = async () => {
-            setLoadingLotes(true);
             try {
-                const data = await obtenerMisFichas();
-                setLotes(data);
+                const response = await getMisLotes();
+                setLotes(response || []);
             } catch (e) {
                 setLotes([]);
-            } finally {
-                setLoadingLotes(false);
             }
         };
         fetchLotes();
     }, []);
-
     const handleTabPress = (tab: string) => {
-        if (tab === activeTab) return; // Si ya estamos en esa pestaña, no hacer nada
         setActiveTab(tab);
         switch (tab) {
-            case 'Ganado':
-                router.replace('/ganado');
-                break;
             case 'Inicio':
                 router.replace('/inicio');
+                break;
+            case 'Ganado':
+                router.replace('/ganado');
                 break;
             case 'Formulario':
                 router.replace('/formulario');
@@ -168,269 +40,315 @@ export default function Inicio() {
                 break;
         }
     };
-
-    // Función para detectar el scroll y ajustar la transparencia de la barra
-    const handleScroll = (event: any) => {
-        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-        const scrollY = contentOffset.y;
-        const contentHeight = contentSize.height;
-        const screenHeight = layoutMeasurement.height;
-        
-        // Calcular si estamos cerca del final del contenido
-        const distanceFromBottom = contentHeight - scrollY - screenHeight;
-        const threshold = 150; // Distancia en píxeles desde el final
-        
-        // Hacer transparente si estamos cerca del final o si hay poco contenido
-        const shouldBeTransparent = distanceFromBottom < threshold || contentHeight < screenHeight;
-        
-        setIsTabBarTransparent(shouldBeTransparent);
-    };
-
-    const headerDynamicHeight = HEADER_HEIGHT + insets.top;
-
     return (
-        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-            <Stack.Screen options={{ headerShown: false }} />
-            <View style={[styles.welcomeHeader, { height: headerDynamicHeight, paddingTop: insets.top }]}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.welcomeSmall}>Bienvenido(a)</Text>
-                    <Text style={styles.welcomeName}>{user?.name || (user as any)?.nombre || ''}</Text>
+        <View style={{ flex: 1, backgroundColor: '#fff' }}>
+            {/* HEADER CURVO Y BIENVENIDA */}
+            <View style={styles.headerContainer}>
+                {/* Fondo curvo */}
+                <RNImage source={require('../assets/images/Header.png')} style={styles.headerBg} resizeMode="cover" />
+                <View style={styles.headerContentCentered}>
+                    <RNImage source={require('../assets/icons/Person.png')} style={styles.headerUserIcon} resizeMode="contain" />
+                    <View style={styles.headerTextBlock}>
+                        <Text style={styles.headerWelcome}>Bienvenido(a)</Text>
+                        <Text style={styles.headerName}>{user?.name || (user as any)?.nombre || ''}</Text>
+                        
+                    </View>
                 </View>
-                <Image source={require('../assets/images/Logo.png')} style={styles.logo} resizeMode="contain" />
             </View>
-            <ScrollView 
-                style={styles.scrollView}
-                contentContainerStyle={{ paddingTop: headerDynamicHeight + rh(4) }}
-                onScroll={handleScroll}
-            >
-                <View style={{ flex: 1, marginTop: 1, paddingHorizontal: rw(4) }}>
-                    <View style={styles.dailyContainer}>
-                        <Text style={styles.sectionTitle}>Actividades diarias</Text>
-                        <View style={styles.dailyScrollWrapper}>
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.dailyScroll}
-                            >
-                                {dailyCards.map((card, idx) => (
-                                    <TouchableOpacity
-                                        key={card.label + idx}
-                                        style={[styles.dailyCard, idx !== dailyCards.length - 1 && { marginRight: rw(3) }]}
-                                        activeOpacity={0.85}
-                                    >
-                                        {card.icon}
-                                        <Text style={styles.dailyLabel}>{card.label}</Text>
-                                        <Text style={styles.dailyValue}>
-                                            <Text style={styles.bold}>{card.bold}</Text>/{card.value.split('/')[1]}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
+
+            {/* ACTIVIDADES DIARIAS */}
+            <View style={styles.sectionContainer}>
+                <Text style={styles.activitiesTitle}>Actividades diarias</Text>
+                <View style={styles.activitiesRow}>
+                    {/* Card 1: Cumplidas */}
+                    <View style={[styles.activityCard, styles.activityCardDone]}> 
+                        <MaterialCommunityIcons name="check-circle-outline" size={28} color="#23263B" style={styles.activityIcon} />
+                        <Text style={styles.activityLabel}>Cumplidas</Text>
+                        <Text style={styles.activityValue}><Text style={styles.activityValueBold}>20</Text>/30</Text>
                     </View>
-                    <Text style={[styles.sectionTitle, { marginTop: rh(3) }]}>Establos activos</Text>
-                    {loadingLotes ? (
-                        <Text style={{ color: theme.primary.text, marginVertical: 16 }}>Cargando establos...</Text>
-                    ) : (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
-                            {lotes.length === 0 && (
-                                <Text style={{ color: theme.primary.text, opacity: 0.7, marginRight: 16 }}>No tienes lotes registrados.</Text>
-                            )}
-                            {lotes.map((lote, idx) => (
-                                <View key={lote.id} style={{ width: 110, marginRight: 16 }}>
-                                    <EstabloMiniCard
-                                        lote={lote}
-                                        onPress={() => router.push({ pathname: '/detalle-ficha/[id]', params: { id: lote.id } })}
-                                    />
-                                </View>
-                            ))}
-                        </ScrollView>
-                    )}
-                    <Text style={styles.sectionTitle2}>Tus estadísticas</Text>
-                    <View style={styles.statsCol}>
-                        <View style={styles.statsCard}>
-                            <View style={styles.statsCardRow}>
-                                <MaterialCommunityIcons name="cow" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                                <Text style={styles.statsTitle}>Estado del ganado</Text>
-                                <TouchableOpacity style={styles.statsArrow} onPress={() => router.push('/ganado')}>
-                                    <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
-                                </TouchableOpacity>
-                            </View>
-                            <AnimatedDotsLine />
+                    {/* Card 2: Revisiones */}
+                    <View style={[styles.activityCard, styles.activityCardReview]}>
+                        <MaterialCommunityIcons name="note-outline" size={28} color="#23263B" style={styles.activityIcon} />
+                        <Text style={styles.activityLabel}>Revisiones</Text>
+                        <Text style={styles.activityValue}><Text style={styles.activityValueBold}>10</Text>/30</Text>
+                    </View>
+                    {/* Card 3: Inventario */}
+                    <View style={[styles.activityCard, styles.activityCardInventory]}>
+                        <MaterialCommunityIcons name="format-list-bulleted" size={28} color="#23263B" style={styles.activityIcon} />
+                        <Text style={styles.activityLabel}>Inventario</Text>
+                        <Text style={styles.activityValue}><Text style={styles.activityValueBold}>5</Text>/30</Text>
+                    </View>
+                    {/* Futuras cards */}
+                </View>
+            </View>
+
+            {/* ESTADÍSTICAS */}
+            <View style={styles.sectionContainer}>
+                <Text style={styles.statsTitle}>Tus estadísticas</Text>
+                <View style={styles.statsList}>
+                    {/* Card 1: Estado del ganado */}
+                    <View style={[styles.statsCard, styles.statsCardMain]}>
+                        <View style={styles.statsCardLeft}>
+                            <RNImage source={require('../assets/icons/Book.png')} style={styles.statsIcon} />
+                            <Text style={styles.statsLabel}>Estado del ganado</Text>
                         </View>
-                        <View style={styles.statsCard}>
-                            <View style={styles.statsCardRow}>
-                                <MaterialCommunityIcons name="shovel" size={32} color={theme.primary.text} style={styles.statsIcon} />
-                                <Text style={styles.statsTitle}>Dietas a vencer</Text>
-                                <TouchableOpacity style={styles.statsArrow}>
-                                    <Ionicons name="chevron-forward" size={24} color={theme.primary.text} />
-                                </TouchableOpacity>
-                            </View>
-                            <AnimatedDotsLine />
+                        <TouchableOpacity style={styles.statsArrowBtn} onPress={() => router.replace('/ganado')}>
+                            <MaterialCommunityIcons name="chevron-right" size={28} color="#23263B" />
+                        </TouchableOpacity>
+                    </View>
+                    {/* Card 2: Próximos a vencer */}
+                    <View style={[styles.statsCard, styles.statsCardReview]}>
+                        <View style={styles.statsCardLeft}>
+                            <RNImage source={require('../assets/icons/Shovel.png')} style={styles.statsIcon} />
+                            <Text style={styles.statsLabel}>Próximos a vencer</Text>
                         </View>
+                        <TouchableOpacity style={styles.statsArrowBtn}>
+                            <MaterialCommunityIcons name="chevron-right" size={28} color="#23263B" />
+                        </TouchableOpacity>
                     </View>
                 </View>
-            </ScrollView>
-            <CustomTabBar 
-                activeTab={activeTab} 
-                onTabPress={handleTabPress}
-                isTransparent={isTabBarTransparent}
-            />
-        </SafeAreaView>
+            </View>
+
+            {/* ESTABLOS ACTIVOS */}
+            <View style={styles.sectionContainer}>
+                <Text style={styles.statsTitle}>Establos activos</Text>
+                <View style={styles.stablesGrid}>
+                    {lotes.length === 0 ? (
+                        <Text style={{ color: '#A3A6B7', textAlign: 'center', width: '100%' }}>No tienes lotes registrados.</Text>
+                    ) : (
+                        lotes.map((lote, idx) => (
+                            <View key={lote.id || idx} style={[styles.activityCard, styles.stableCardGrid]}> 
+                                <RNImage source={require('../assets/icons/Grid.png')} style={styles.activityIcon} />
+                                <Text style={styles.stableNumber}>{lote.nombre || lote.id}</Text>
+                            </View>
+                        ))
+                    )}
+                </View>
+            </View>
+
+            {/* Quitar navbar personalizada y poner CustomTabBar */}
+            <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} backgroundColor="#F0E8C9" />
+        </View>
     );
 }
 
+// Copio los estilos desde index.tsx
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.secondary.background,
+    headerContainer: {
+        width: '100%',
+        height: 120,
+        position: 'relative',
+        backgroundColor: '#F0E8C9',
+        borderBottomRightRadius: 120,
+        borderBottomLeftRadius: 0,
+        overflow: 'hidden',
+        marginBottom: 12,
     },
-    welcomeHeader: {
+    headerBg: {
         position: 'absolute',
+        width: '130%',
+        height: '100%',
         top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        backgroundColor: theme.primary.main,
-        borderBottomLeftRadius: 25,
-        borderBottomRightRadius: 25,
-        paddingHorizontal: rw(5),
-        paddingBottom: rh(2),
+        left: '-15%',
+        zIndex: 2,
+    },
+    headerCow: {
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        width: 40,
+        height: 40,
+        opacity: 0.08,
+        zIndex: 1,
+    },
+    headerContentRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 5,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 15,
-        elevation: 8,
+        marginTop: 24,
+        marginLeft: 18,
+        zIndex: 2,
     },
-    welcomeSmall: {
-        color: theme.primary.text,
-        fontSize: rf(1.8),
-        fontWeight: '500',
-        marginBottom: rh(0.5),
+    headerUserIcon: {
+        width: 40,
+        height: 40,
+        marginRight: 12,
     },
-    welcomeName: {
-        color: theme.primary.text,
-        fontSize: rf(3.2),
+    headerTextBlock: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+    },
+    headerWelcome: {
+        color: '#23263B',
+        fontSize: 15,
+        fontWeight: '400',
+        marginBottom: 2,
+    },
+    headerName: {
+        color: '#23263B',
+        fontSize: 22,
         fontWeight: 'bold',
     },
-    dailyContainer: {
-        marginTop: 0, // Reset margin
-        marginBottom: rh(1.5),
-        maxHeight: rh(16),
+    sectionContainer: {
+        marginHorizontal: 18,
+        marginBottom: 18,
     },
     sectionTitle: {
-        fontSize: rf(1.8),
-        color: '#A0A3BD',
-        fontWeight: '600',
-        marginBottom: rh(0.8),
+        color: theme.primary.text,
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginBottom: 10,
     },
-    dailyScrollWrapper: {
-        height: rh(12),
-        justifyContent: 'center',
+    activitiesTitle: {
+        color: '#A3A6B7',
+        fontWeight: '500',
+        fontSize: 16,
+        marginBottom: 12,
     },
-    dailyScroll: {
+    activitiesRow: {
         flexDirection: 'row',
+        justifyContent: 'flex-start',
+        gap: 16,
+    },
+    activityCard: {
+        flex: 1,
+        borderRadius: 1,
         alignItems: 'center',
-        paddingRight: rw(1),
+        paddingVertical: 18,
+        marginHorizontal: 0,
+        elevation: 1,
+        minWidth: 125,
+        maxWidth: 145,
+        backgroundColor: '#FCF8EA', // default, override per card
     },
-    dailyCard: {
-        width: rw(28),
-        height: rh(12),
-        backgroundColor: theme.primary.main,
-        borderRadius: rw(3.5),
-        alignItems: 'center',
-        justifyContent: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 2,
+    activityCardDone: {
+        backgroundColor: '#EFE7C9',
     },
-    dailyLabel: {
-        color: theme.primary.text,
-        fontSize: rf(1.6),
-        marginBottom: rh(0.2),
+    activityCardReview: {
+        backgroundColor: '#FCF8EA',
     },
-    dailyValue: {
-        color: theme.primary.text,
-        fontSize: rf(2.2),
-        fontWeight: 'bold',
+    activityCardInventory: {
+        backgroundColor: '#FDFBF5',
     },
-    bold: {
-        fontWeight: 'bold',
-        fontSize: rf(2.5),
-        color: theme.primary.text,
+    activityIcon: {
+        width: 26,
+        height: 26,
+        marginBottom: 10,
+        tintColor: '#23263B',
     },
-    sectionTitle2: {
-        fontSize: rf(2),
-        color: '#A0A3BD',
+    activityLabel: {
+        color: '#23263B',
+        fontSize: 15,
         fontWeight: '600',
-        marginTop: rh(1.5),
-        marginBottom: rh(1.2),
+        marginBottom: 5,
     },
-    statsCol: {
+    activityValue: {
+        color: '#23263B',
+        fontSize: 19,
+        fontWeight: '400',
+    },
+    activityValueBold: {
+        fontWeight: 'bold',
+        fontSize: 22,
+        color: '#23263B',
+    },
+    statsTitle: {
+        color: '#A3A6B7',
+        fontWeight: '500',
+        fontSize: 16,
+        marginBottom: 12,
+    },
+    statsList: {
         gap: 16,
     },
     statsCard: {
-        backgroundColor: theme.primary.main,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 0,
-        elevation: 1,
-    },
-    statsCardRow: {
+        backgroundColor: '#EFE7C9',
+        borderRadius: 14,
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        padding: 18,
+        marginBottom: 0,
+        elevation: 1,
+        justifyContent: 'space-between',
+    },
+    statsCardMain: {
+        backgroundColor: '#EFE7C9',
+    },
+    statsCardReview: {
+        backgroundColor: '#FCF8EA',
+    },
+    statsCardEnergy: {
+        backgroundColor: '#FDFBF5',
+    },
+    statsCardLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: 14,
     },
     statsIcon: {
-        marginRight: 12,
+        width: 34,
+        height: 34,
+        marginRight: 8,
     },
-    statsTitle: {
-        flex: 1,
-        fontSize: 16,
-        color: theme.primary.text,
-        fontWeight: '600',
+    statsLabel: {
+        color: '#23263B',
+        fontWeight: 'bold',
+        fontSize: 17,
     },
-    statsArrow: {
-        backgroundColor: theme.primary.button,
-        borderRadius: 20,
-        padding: 6,
+    statsArrowBtn: {
+        backgroundColor: '#FFD24A',
+        borderRadius: 8,
+        width: 38,
+        height: 38,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    statsDotsRow: {
+    stablesGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
+        gap: 16,
+    },
+    stableCardGrid: {
+        backgroundColor: '#FCF8EA',
+        borderRadius: 12,
+        alignItems: 'center',
+        paddingVertical: 18,
+        marginHorizontal: 0,
+        elevation: 1,
+        minWidth: 100,
+        maxWidth: 140,
+        marginBottom: 16,
+        flexBasis: '30%',
+    },
+    stableNumber: {
+        color: '#23263B',
+        fontWeight: 'bold',
+        fontSize: 15,
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    headerShadow: {
+        position: 'absolute',
+        bottom: -30,
+        right: 0,
+        width: '100%',
+        height: 80,
+        backgroundColor: '#bdb38b',
+        borderBottomRightRadius: 180,
+        borderBottomLeftRadius: 0,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
+        zIndex: 1,
+    },
+    headerContentCentered: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 2,
-        gap: 8,
-    },
-    dot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: theme.primary.button,
-    },
-    line: {
-        flex: 1,
-        height: 4,
-        backgroundColor: '#23263B',
-        borderRadius: 2,
-        marginHorizontal: 2,
-    },
-    logo: {
-        width: 56,
-        height: 56,
-        alignSelf: 'flex-end',
-        marginBottom: rh(3),
-    },
-    scrollView: {
-        flex: 1,
+        justifyContent: 'flex-start',
+        height: '100%',
+        width: '100%',
+        zIndex: 3,
+        marginTop: 10,
+        marginLeft: 25,
     },
 });

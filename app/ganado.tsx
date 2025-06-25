@@ -1,11 +1,11 @@
 import { theme } from '@/constants/Theme';
-import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Image as RNImage,
   StatusBar,
   StyleSheet,
   Text,
@@ -171,10 +171,20 @@ export default function Ganado() {
   };
 
   const handleTabPress = (tab: string) => {
-    if (tab === activeTab) return;
     setActiveTab(tab);
-    if (tab === 'Inicio' || tab === 'Formulario' || tab === 'Perfil') {
-      router.replace(`/${tab.toLowerCase()}` as any);
+    switch (tab) {
+        case 'Inicio':
+            router.replace('/inicio');
+            break;
+        case 'Ganado':
+            router.replace('/ganado');
+            break;
+        case 'Formulario':
+            router.replace('/formulario');
+            break;
+        case 'Perfil':
+            router.replace('/perfil');
+            break;
     }
   };
 
@@ -276,25 +286,17 @@ export default function Ganado() {
           </View>
         </Modal>
       )}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Fichas de Ganado</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity style={styles.testButton} onPress={handleTestPesos}>
-            <Ionicons name="flask-outline" size={20} color={theme.primary.text} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-            <Ionicons name="refresh-outline" size={24} color={theme.primary.text} />
-          </TouchableOpacity>
+      <View style={styles.headerContainer}>
+        <RNImage source={require('../assets/images/Header.png')} style={styles.headerBg} resizeMode="cover" />
+        <View style={styles.headerContentCentered}>
+          <RNImage source={require('../assets/icons/Book.png')} style={styles.headerUserIcon} resizeMode="contain" />
+          <Text style={styles.headerName}>Fichas de ganado</Text>
         </View>
       </View>
       <View style={styles.content}>
         <ListContent />
       </View>
-      <CustomTabBar 
-        activeTab={activeTab} 
-        onTabPress={handleTabPress}
-        isTransparent={false}
-      />
+      <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} backgroundColor="#F0E8C9" />
     </View>
   );
 }
@@ -304,20 +306,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.secondary.card_2,
   },
-  header: {
-    paddingTop: 40,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
+  headerContainer: {
+    width: '100%',
+    height: 120,
+    position: 'relative',
+    backgroundColor: '#F0E8C9',
+    borderBottomRightRadius: 120,
+    borderBottomLeftRadius: 0,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  headerBg: {
+    position: 'absolute',
+    width: '130%',
+    height: '100%',
+    top: 0,
+    left: '-15%',
+    zIndex: 2,
+  },
+  headerContentCentered: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.primary.main,
+    justifyContent: 'flex-start',
+    height: '100%',
+    width: '100%',
+    zIndex: 3,
+    marginTop: 10,
+    marginLeft: 25,
   },
-  headerTitle: {
+  headerUserIcon: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+  },
+  headerName: {
+    color: '#23263B',
     fontSize: 22,
     fontWeight: 'bold',
-    color: theme.primary.text,
-    flex: 1,
   },
   content: {
     flex: 1,

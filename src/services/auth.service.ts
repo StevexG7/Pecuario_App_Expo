@@ -45,7 +45,7 @@ class AuthService {
             await apiClient.post(
                 API_CONFIG.ENDPOINTS.AUTH.REGISTER,
                 {
-                    name: data.name,
+                    nombre: data.name,
                     email: data.email,
                     password: data.password,
                 }

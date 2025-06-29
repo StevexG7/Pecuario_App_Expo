@@ -1,43 +1,46 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Image as RNImage, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image as RNImage, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CustomTabBar from '../components/CustomTabBar';
 import { theme } from '../constants/Theme';
 import { useAuth } from '../src/hooks/useAuth';
-import { getMisLotes, Lote } from '../src/services/lote.service';
+import { FichaAnimal, obtenerMisFichas } from '../src/services/animal.service';
 
 export default function Inicio() {
     const { user } = useAuth();
     const router = useRouter();
     const [activeTab, setActiveTab] = React.useState('Inicio');
-    const [lotes, setLotes] = useState<Lote[]>([]);
-    useEffect(() => {
-        const fetchLotes = async () => {
-            try {
-                console.log('🔄 Fetching lotes...');
-                const response = await getMisLotes();
-                console.log('📦 Response from getMisLotes:', response);
-                console.log('📦 Response type:', typeof response);
-                console.log('📦 Is Array?', Array.isArray(response));
-                
-                // Asegurar que siempre sea un array
-                if (Array.isArray(response)) {
-                    setLotes(response);
-                } else if (response && typeof response === 'object' && (response as any).data && Array.isArray((response as any).data)) {
-                    // Si la respuesta está envuelta en un objeto con propiedad 'data'
-                    setLotes((response as any).data);
-                } else {
-                    console.warn('⚠️ Response is not an array, setting empty array');
-                    setLotes([]);
-                }
-            } catch (e) {
-                console.error('❌ Error fetching lotes:', e);
-                setLotes([]);
+    const [fichas, setFichas] = useState<FichaAnimal[]>([]);
+    const [loadingFichas, setLoadingFichas] = useState(true);
+
+    const fetchFichas = async () => {
+        try {
+            setLoadingFichas(true);
+            console.log('🔄 Fetching fichas de ganado...');
+            const response = await obtenerMisFichas();
+            console.log('📦 Response from obtenerMisFichas:', response);
+            console.log('📦 Response type:', typeof response);
+            console.log('📦 Is Array?', Array.isArray(response));
+            
+            if (Array.isArray(response)) {
+                setFichas(response);
+            } else {
+                console.warn('⚠️ Response is not an array, setting empty array');
+                setFichas([]);
             }
-        };
-        fetchLotes();
+        } catch (e) {
+            console.error('❌ Error fetching fichas:', e);
+            setFichas([]);
+        } finally {
+            setLoadingFichas(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchFichas();
     }, []);
+
     const handleTabPress = (tab: string) => {
         setActiveTab(tab);
         switch (tab) {
@@ -55,98 +58,153 @@ export default function Inicio() {
                 break;
         }
     };
+
     return (
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            {/* HEADER CURVO Y BIENVENIDA */}
-            <View style={styles.headerContainer}>
-                {/* Fondo curvo */}
-                <RNImage source={require('../assets/images/Header.png')} style={styles.headerBg} resizeMode="cover" />
-                <View style={styles.headerContentCentered}>
-                    <RNImage source={require('../assets/icons/Person.png')} style={styles.headerUserIcon} resizeMode="contain" />
-                    <View style={styles.headerTextBlock}>
-                        <Text style={styles.headerWelcome}>Bienvenido(a)</Text>
-                        <Text style={styles.headerName}>{user?.name || (user as any)?.nombre || ''}</Text>
-                        
-                    </View>
-                </View>
-            </View>
-
-            {/* ACTIVIDADES DIARIAS */}
-            <View style={styles.sectionContainer}>
-                <Text style={styles.activitiesTitle}>Actividades diarias</Text>
-                <View style={styles.activitiesRow}>
-                    {/* Card 1: Cumplidas */}
-                    <View style={[styles.activityCard, styles.activityCardDone]}> 
-                        <MaterialCommunityIcons name="check-circle-outline" size={28} color="#23263B" style={styles.activityIcon} />
-                        <Text style={styles.activityLabel}>Cumplidas</Text>
-                        <Text style={styles.activityValue}><Text style={styles.activityValueBold}>20</Text>/30</Text>
-                    </View>
-                    {/* Card 2: Revisiones */}
-                    <View style={[styles.activityCard, styles.activityCardReview]}>
-                        <MaterialCommunityIcons name="note-outline" size={28} color="#23263B" style={styles.activityIcon} />
-                        <Text style={styles.activityLabel}>Revisiones</Text>
-                        <Text style={styles.activityValue}><Text style={styles.activityValueBold}>10</Text>/30</Text>
-                    </View>
-                    {/* Card 3: Inventario */}
-                    <View style={[styles.activityCard, styles.activityCardInventory]}>
-                        <MaterialCommunityIcons name="format-list-bulleted" size={28} color="#23263B" style={styles.activityIcon} />
-                        <Text style={styles.activityLabel}>Inventario</Text>
-                        <Text style={styles.activityValue}><Text style={styles.activityValueBold}>5</Text>/30</Text>
-                    </View>
-                    {/* Futuras cards */}
-                </View>
-            </View>
-
-            {/* ESTADÍSTICAS */}
-            <View style={styles.sectionContainer}>
-                <Text style={styles.statsTitle}>Tus estadísticas</Text>
-                <View style={styles.statsList}>
-                    {/* Card 1: Estado del ganado */}
-                    <View style={[styles.statsCard, styles.statsCardMain]}>
-                        <View style={styles.statsCardLeft}>
-                            <RNImage source={require('../assets/icons/Book.png')} style={styles.statsIcon} />
-                            <Text style={styles.statsLabel}>Estado del ganado</Text>
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* HEADER CURVO Y BIENVENIDA */}
+                <View style={styles.headerContainer}>
+                    {/* Fondo curvo */}
+                    <RNImage source={require('../assets/images/Header.png')} style={styles.headerBg} resizeMode="cover" />
+                    <View style={styles.headerContentCentered}>
+                        <RNImage source={require('../assets/icons/Person.png')} style={styles.headerUserIcon} resizeMode="contain" />
+                        <View style={styles.headerTextBlock}>
+                            <Text style={styles.headerWelcome}>Bienvenido(a)</Text>
+                            <Text style={styles.headerName}>{user?.name || (user as any)?.nombre || ''}</Text>
+                            
                         </View>
-                        <TouchableOpacity style={styles.statsArrowBtn} onPress={() => router.replace('/ganado')}>
-                            <MaterialCommunityIcons name="chevron-right" size={28} color="#23263B" />
-                        </TouchableOpacity>
-                    </View>
-                    {/* Card 2: Próximos a vencer */}
-                    <View style={[styles.statsCard, styles.statsCardReview]}>
-                        <View style={styles.statsCardLeft}>
-                            <RNImage source={require('../assets/icons/Shovel.png')} style={styles.statsIcon} />
-                            <Text style={styles.statsLabel}>Próximos a vencer</Text>
-                        </View>
-                        <TouchableOpacity style={styles.statsArrowBtn}>
-                            <MaterialCommunityIcons name="chevron-right" size={28} color="#23263B" />
-                        </TouchableOpacity>
                     </View>
                 </View>
-            </View>
 
-            {/* ESTABLOS ACTIVOS */}
-            <View style={styles.sectionContainer}>
-                <Text style={styles.statsTitle}>Establos activos</Text>
-                <View style={styles.stablesGrid}>
-                    {(() => {
-                        console.log('🔍 Current lotes state:', lotes);
-                        console.log('🔍 Is lotes array?', Array.isArray(lotes));
-                        
-                        if (!lotes || !Array.isArray(lotes) || lotes.length === 0) {
-                            return (
-                                <Text style={{ color: '#A3A6B7', textAlign: 'center', width: '100%' }}>No tienes lotes registrados.</Text>
-                            );
-                        }
-                        
-                        return lotes.map((lote, idx) => (
-                            <View key={lote.id || idx} style={[styles.activityCard, styles.stableCardGrid]}> 
-                                <RNImage source={require('../assets/icons/Grid.png')} style={styles.activityIcon} />
-                                <Text style={styles.stableNumber}>{lote.nombre || lote.id}</Text>
+                {/* ACTIVIDADES DIARIAS */}
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.activitiesTitle}>Actividades diarias</Text>
+                    <View style={styles.activitiesRow}>
+                        {/* Card 1: Cumplidas */}
+                        <View style={[styles.activityCard, styles.activityCardDone]}> 
+                            <MaterialCommunityIcons name="check-circle-outline" size={28} color="#23263B" style={styles.activityIcon} />
+                            <Text style={styles.activityLabel}>Cumplidas</Text>
+                            <Text style={styles.activityValue}><Text style={styles.activityValueBold}>20</Text>/30</Text>
+                        </View>
+                        {/* Card 2: Revisiones */}
+                        <View style={[styles.activityCard, styles.activityCardReview]}>
+                            <MaterialCommunityIcons name="note-outline" size={28} color="#23263B" style={styles.activityIcon} />
+                            <Text style={styles.activityLabel}>Revisiones</Text>
+                            <Text style={styles.activityValue}><Text style={styles.activityValueBold}>10</Text>/30</Text>
+                        </View>
+                        {/* Card 3: Inventario */}
+                        <View style={[styles.activityCard, styles.activityCardInventory]}>
+                            <MaterialCommunityIcons name="format-list-bulleted" size={28} color="#23263B" style={styles.activityIcon} />
+                            <Text style={styles.activityLabel}>Inventario</Text>
+                            <Text style={styles.activityValue}><Text style={styles.activityValueBold}>5</Text>/30</Text>
+                        </View>
+                        {/* Futuras cards */}
+                    </View>
+                </View>
+
+                {/* ESTADÍSTICAS */}
+                <View style={styles.sectionContainer}>
+                    <Text style={styles.statsTitle}>Tus estadísticas</Text>
+                    <View style={styles.statsList}>
+                        {/* Card 1: Total de lotes */}
+                        <View style={[styles.statsCard, styles.statsCardMain]}>
+                            <View style={styles.statsCardLeft}>
+                                <RNImage source={require('../assets/icons/Book.png')} style={styles.statsIcon} />
+                                <View style={styles.statsTextContainer}>
+                                    <Text style={styles.statsLabel}>Total de lotes</Text>
+                                    <Text style={styles.statsValue}>{fichas.length}</Text>
+                                </View>
                             </View>
-                        ));
-                    })()}
+                            <TouchableOpacity style={styles.statsArrowBtn} onPress={() => router.replace('/ganado')}>
+                                <MaterialCommunityIcons name="chevron-right" size={28} color="#23263B" />
+                            </TouchableOpacity>
+                        </View>
+                        {/* Card 2: Total de animales */}
+                        <View style={[styles.statsCard, styles.statsCardReview]}>
+                            <View style={styles.statsCardLeft}>
+                                <RNImage source={require('../assets/icons/Shovel.png')} style={styles.statsIcon} />
+                                <View style={styles.statsTextContainer}>
+                                    <Text style={styles.statsLabel}>Total de animales</Text>
+                                    <Text style={styles.statsValue}>
+                                        {fichas.reduce((total, ficha) => total + (ficha.cantidad || 0), 0)}
+                                    </Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity style={styles.statsArrowBtn}>
+                                <MaterialCommunityIcons name="chevron-right" size={28} color="#23263B" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
-            </View>
+
+                {/* GANADO POR LOTES */}
+                <View style={styles.sectionContainer}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.statsTitle}>Ganado por lotes</Text>
+                        <TouchableOpacity 
+                            style={styles.refreshButton}
+                            onPress={() => {
+                                setLoadingFichas(true);
+                                fetchFichas();
+                            }}
+                            disabled={loadingFichas}
+                        >
+                            <MaterialCommunityIcons 
+                                name="refresh" 
+                                size={20} 
+                                color={loadingFichas ? "#A3A6B7" : "#23263B"} 
+                            />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.stablesGrid}>
+                        {(() => {
+                            if (loadingFichas) {
+                                return (
+                                    <View style={styles.loadingContainer}>
+                                        <MaterialCommunityIcons name="loading" size={32} color="#A3A6B7" />
+                                        <Text style={styles.loadingText}>Cargando ganado...</Text>
+                                    </View>
+                                );
+                            }
+                            
+                            console.log('🔍 Current fichas state:', fichas);
+                            console.log('🔍 Is fichas array?', Array.isArray(fichas));
+                            
+                            if (!fichas || !Array.isArray(fichas) || fichas.length === 0) {
+                                return (
+                                    <View style={styles.emptyStateContainer}>
+                                        <MaterialCommunityIcons name="cow" size={48} color="#A3A6B7" />
+                                        <Text style={styles.emptyStateText}>No tienes ganado registrado</Text>
+                                        <Text style={styles.emptyStateSubtext}>Registra tu primer lote de ganado</Text>
+                                    </View>
+                                );
+                            }
+                            
+                            return fichas.map((ficha, idx) => (
+                                <TouchableOpacity 
+                                    key={ficha.id || idx} 
+                                    style={[styles.activityCard, styles.stableCardGrid]}
+                                    onPress={() => {
+                                        // Navegar al detalle del lote cuando esté implementado
+                                        console.log('Navegando al lote:', ficha.id);
+                                    }}
+                                > 
+                                    <View style={styles.stableCardContent}>
+                                        <RNImage source={require('../assets/icons/Grid.png')} style={styles.stableIcon} />
+                                        <Text style={styles.stableNumber} numberOfLines={2}>
+                                            {ficha.nombre_lote || `Lote ${ficha.id}`}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ));
+                        })()}
+                    </View>
+                </View>
+            </ScrollView>
 
             {/* Quitar navbar personalizada y poner CustomTabBar */}
             <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} backgroundColor="#F0E8C9" />
@@ -156,6 +214,12 @@ export default function Inicio() {
 
 // Copio los estilos desde index.tsx
 const styles = StyleSheet.create({
+    scrollView: {
+        flex: 1,
+    },
+    scrollViewContent: {
+        paddingBottom: 100, // Espacio para la navbar
+    },
     headerContainer: {
         width: '100%',
         height: 120,
@@ -325,10 +389,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    statsTextContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+    },
+    statsValue: {
+        color: '#23263B',
+        fontSize: 19,
+        fontWeight: '400',
+    },
     stablesGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
+        alignItems: 'center',
         gap: 16,
     },
     stableCardGrid: {
@@ -338,17 +412,47 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         marginHorizontal: 0,
         elevation: 1,
-        minWidth: 100,
-        maxWidth: 140,
+        minWidth: 125,
+        maxWidth: 145,
+        height: 120,
         marginBottom: 16,
         flexBasis: '30%',
+    },
+    stableCardContent: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+    },
+    stableIcon: {
+        width: 26,
+        height: 26,
+        marginBottom: 10,
     },
     stableNumber: {
         color: '#23263B',
         fontWeight: 'bold',
         fontSize: 15,
-        marginTop: 8,
         textAlign: 'center',
+        lineHeight: 20,
+    },
+    stableDescription: {
+        color: '#23263B',
+        fontSize: 13,
+        fontWeight: '400',
+        marginTop: 4,
+    },
+    stableStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    stableStatsText: {
+        color: '#23263B',
+        fontSize: 13,
+        fontWeight: '400',
+        marginLeft: 4,
     },
     headerShadow: {
         position: 'absolute',
@@ -372,5 +476,43 @@ const styles = StyleSheet.create({
         zIndex: 3,
         marginTop: 10,
         marginLeft: 25,
+    },
+    emptyStateContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyStateText: {
+        color: '#A3A6B7',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    emptyStateSubtext: {
+        color: '#A3A6B7',
+        fontSize: 14,
+        fontWeight: '400',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: '#A3A6B7',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginTop: 12,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    refreshButton: {
+        backgroundColor: '#FFD24A',
+        borderRadius: 8,
+        padding: 8,
     },
 });

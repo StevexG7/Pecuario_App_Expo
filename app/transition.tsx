@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { HelloWave } from '../components/HelloWave';
 import { theme } from '../constants/Theme';
 import { obtenerMisFichas } from '../src/services/animal.service';
 
@@ -37,6 +38,7 @@ const TransitionScreen = () => {
 
     return (
         <View style={styles.container}>
+            <HelloWave />
             <ActivityIndicator size="large" color={theme.primary.text} />
         </View>
     );

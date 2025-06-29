@@ -5,6 +5,9 @@ export interface Lote {
   id: number;
   nombre: string;
   descripcion?: string;
+  numeroAnimales?: number;
+  estado?: string;
+  fechaCreacion?: string;
   // Agregar más campos según la respuesta del backend
 }
 

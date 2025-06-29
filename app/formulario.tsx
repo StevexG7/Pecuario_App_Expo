@@ -150,7 +150,11 @@ export default function Formulario() {
                 </View>
             </View>
             <AppAlert message={alert ?? ''} onClose={() => setAlert(null)} />
-            <ScrollView style={styles.scrollView}>
+            <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.content}>
                     <Text style={styles.title}>Registro de Ganado</Text>
                     
@@ -268,6 +272,9 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+    },
+    scrollViewContent: {
+        paddingBottom: 100, // Added padding bottom to avoid content passing below the navbar
     },
     content: {
         flex: 1,

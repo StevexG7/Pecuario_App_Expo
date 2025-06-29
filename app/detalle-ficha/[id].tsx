@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 0,
+    paddingBottom: 20,
     alignItems: 'stretch',
   },
   loading: {

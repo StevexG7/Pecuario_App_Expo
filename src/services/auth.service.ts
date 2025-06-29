@@ -29,7 +29,10 @@ class AuthService {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
         const response = await apiClient.post<AuthResponse>(
             API_CONFIG.ENDPOINTS.AUTH.LOGIN,
-            credentials
+            {
+                ...credentials,
+                nombre: ''
+            }
         );
 
         if (!response.token || !response.refreshToken || !response.user) {
@@ -45,7 +48,7 @@ class AuthService {
             await apiClient.post(
                 API_CONFIG.ENDPOINTS.AUTH.REGISTER,
                 {
-                    nombre: data.name,
+                    name: data.name,
                     email: data.email,
                     password: data.password,
                 }

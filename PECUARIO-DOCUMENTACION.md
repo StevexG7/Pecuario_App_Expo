@@ -16,7 +16,7 @@ Expo es una herramienta que facilita el desarrollo con React Native. Permite cre
 
 ## 2. Estructura del Proyecto
 
-Tu proyecto tiene una estructura similar a esta:
+Estructura del proyecto:
 
 ```
 Pecuario_App/
